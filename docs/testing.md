@@ -24,6 +24,16 @@
 3. Review logs for action distribution and stop rate.
 4. Use replay tooling to compare prompt versions.
 
+## Mock backend for firmware bring-up
+Use deterministic scenarios when firmware integration starts before model tuning is stable:
+
+```bash
+python simulator/mock_backend.py --scenario always_stop --port 8010
+python simulator/mock_backend.py --scenario always_forward --port 8010
+python simulator/mock_backend.py --scenario alternating_turns --port 8010
+python simulator/mock_backend.py --scenario timeout --timeout-seconds 3 --port 8010
+```
+
 ## Definition of done for touched behavior
 - behavior implemented with explicit error handling
 - tests added for normal and failure paths
