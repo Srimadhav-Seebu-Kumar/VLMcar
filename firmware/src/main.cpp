@@ -18,6 +18,7 @@ void setup() {
 }
 
 void loop() {
+  failsafe_update_inputs();
   failsafe_kick();
   g_state_machine.step();
   motor_driver_update();

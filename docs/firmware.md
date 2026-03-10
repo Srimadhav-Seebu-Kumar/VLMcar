@@ -19,6 +19,8 @@
 - Every motion command has finite `duration_ms`.
 - Motors are stopped at end of pulse and on every error path.
 - Camera capture requires explicit frame release before next capture.
+- Backend timeout or command parse failure forces immediate STOP.
+- ESTOP input state is polled each loop and blocks motion until cleared.
 
 ## State transitions
 

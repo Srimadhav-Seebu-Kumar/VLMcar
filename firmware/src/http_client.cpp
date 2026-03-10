@@ -120,6 +120,12 @@ bool http_client_send_frame(const FrameBuffer& frame, const FrameMetadata& metad
   const String response = client.getString();
   client.end();
 
+  if (status <= 0) {
+    out_error = "backend timeout";
+    set_safe_stop(out_command, out_error);
+    return false;
+  }
+
   if (status != 200) {
     out_error = "backend status=" + String(status) + " body=" + response;
     set_safe_stop(out_command, out_error);

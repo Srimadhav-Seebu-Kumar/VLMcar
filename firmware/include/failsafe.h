@@ -4,6 +4,7 @@
 
 void failsafe_init();
 void failsafe_kick();
+void failsafe_update_inputs();
 bool failsafe_watchdog_expired();
 void failsafe_set_estop(bool active);
 bool failsafe_estop_active();

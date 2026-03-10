@@ -25,4 +25,6 @@ inline constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 15000;
 inline constexpr uint32_t BACKEND_TIMEOUT_MS = 3000;
 inline constexpr uint32_t LOOP_DELAY_MS = 20;
 inline constexpr uint32_t WATCHDOG_TIMEOUT_MS = 2500;
+
+inline constexpr bool ESTOP_ACTIVE_LOW = true;
 }
