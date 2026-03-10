@@ -31,4 +31,6 @@ Set Wi-Fi and backend values in `include/config.h` before flashing hardware.
 ## Safety baseline
 - Startup state is stationary.
 - Motor pulses are bounded and auto-stop.
+- Overlapping pulse execution is rejected.
+- Motor clamp behavior is compile-time checked via `static_assert` in `motor_math.h`.
 - Scaffold failsafe and explicit state-machine transitions are included.
