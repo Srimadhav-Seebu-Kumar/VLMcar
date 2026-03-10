@@ -1,0 +1,9 @@
+"""Placeholder workflow file. CI implementation arrives in a later task."""
+name: placeholder
+on:
+  workflow_dispatch:
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Workflow will be replaced in CI task"

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zero-shot-rc-car"
+version = "0.1.0"
+description = "Safety-first offline monorepo for zero-shot RC car navigation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.111,<1.0",
+  "uvicorn[standard]>=0.30,<1.0",
+  "pydantic>=2.7,<3.0",
+  "pydantic-settings>=2.3,<3.0",
+  "httpx>=0.27,<1.0",
+  "python-multipart>=0.0.9,<1.0",
+  "pillow>=11.2,<12.0",
+  "opencv-python-headless>=4.10,<5.0",
+  "sqlalchemy>=2.0,<3.0",
+  "jsonschema>=4.23,<5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-cov>=5.0,<6.0",
+  "ruff>=0.6,<1.0",
+  "mypy>=1.11,<2.0",
+  "pre-commit>=3.8,<4.0",
+]
+
+[tool.setuptools]
+packages = ["backend"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["backend/tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+mypy_path = "."
+packages = ["backend"]
+exclude = ["firmware", "notebooks"]
+
