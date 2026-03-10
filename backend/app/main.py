@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from backend.app.api.routes.control import router as control_router
 from backend.app.api.routes.system import router as system_router
 from backend.app.core.config import AppSettings, get_settings
 from backend.app.core.logging import configure_logging
@@ -38,6 +39,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     )
     app.state.settings = app_settings
     app.include_router(system_router)
+    app.include_router(control_router)
 
     return app
 
