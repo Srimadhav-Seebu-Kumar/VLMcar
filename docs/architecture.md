@@ -61,6 +61,7 @@ BOOT -> WIFI_CONNECTING -> BACKEND_WAIT -> CAPTURE -> UPLOAD -> DECIDE -> EXECUT
 - Runtime persistence uses SQLite through SQLAlchemy.
 - Metadata tables: `sessions`, `frames`, `decisions`, `telemetry`, `errors`.
 - Uploaded frame bytes are stored on disk; database stores frame file paths and metadata.
+- Preprocess metrics (`mean_brightness`, `contrast`, `blur_score`, `quality_score`) are persisted per frame.
 
 ## Runtime safety posture
 - Backend timeout returns STOP.

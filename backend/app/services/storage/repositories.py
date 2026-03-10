@@ -9,6 +9,7 @@ from backend.app.schemas.command import CommandResponse
 from backend.app.schemas.frame import FrameRequest
 from backend.app.schemas.session import SessionMetadata
 from backend.app.schemas.telemetry import TelemetryPayload
+from backend.app.services.preprocess import FrameQualityMetrics
 from backend.app.services.storage.models import (
     DecisionRecord,
     ErrorRecord,
@@ -64,6 +65,7 @@ class FrameRepository:
         file_path: str,
         content_type: str,
         payload_size_bytes: int,
+        quality_metrics: FrameQualityMetrics | None = None,
     ) -> FrameRecord:
         record = FrameRecord(
             session_id=str(metadata.session_id) if metadata.session_id else None,
@@ -83,6 +85,10 @@ class FrameRepository:
             content_type=content_type,
             payload_size_bytes=payload_size_bytes,
             file_path=file_path,
+            mean_brightness=quality_metrics.mean_brightness if quality_metrics else None,
+            contrast=quality_metrics.contrast if quality_metrics else None,
+            blur_score=quality_metrics.blur_score if quality_metrics else None,
+            quality_score=quality_metrics.quality_score if quality_metrics else None,
         )
         self._db.add(record)
         self._db.flush()

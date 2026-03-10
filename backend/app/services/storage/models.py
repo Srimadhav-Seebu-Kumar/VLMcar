@@ -58,6 +58,10 @@ class FrameRecord(Base):
     content_type: Mapped[str] = mapped_column(String(64), nullable=False)
     payload_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
+    mean_brightness: Mapped[float | None] = mapped_column(Float, nullable=True)
+    contrast: Mapped[float | None] = mapped_column(Float, nullable=True)
+    blur_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at_ms: Mapped[int] = mapped_column(BigInteger, default=now_ms, nullable=False)
 
     session: Mapped[SessionRecord | None] = relationship(back_populates="frames")

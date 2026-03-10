@@ -5,6 +5,7 @@ from backend.app.services.storage.db import (
     init_db,
     session_scope,
 )
+from backend.app.services.storage.files import FrameFileStore, StoredFrame
 from backend.app.services.storage.models import (
     DecisionRecord,
     ErrorRecord,
@@ -25,10 +26,12 @@ __all__ = [
     "DecisionRepository",
     "ErrorRecord",
     "ErrorRepository",
+    "FrameFileStore",
     "FrameRecord",
     "FrameRepository",
     "SessionRecord",
     "SessionRepository",
+    "StoredFrame",
     "TelemetryRecord",
     "TelemetryRepository",
     "clear_cached_db_handles",
