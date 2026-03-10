@@ -57,6 +57,11 @@ BOOT -> WIFI_CONNECTING -> BACKEND_WAIT -> CAPTURE -> UPLOAD -> DECIDE -> EXECUT
 - `backend/app/schemas/` mirrors contract types in Pydantic.
 - Simulator uses the same API contract as firmware.
 
+## Storage implementation
+- Runtime persistence uses SQLite through SQLAlchemy.
+- Metadata tables: `sessions`, `frames`, `decisions`, `telemetry`, `errors`.
+- Uploaded frame bytes are stored on disk; database stores frame file paths and metadata.
+
 ## Runtime safety posture
 - Backend timeout returns STOP.
 - Model parse failure returns STOP.
