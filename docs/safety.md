@@ -14,7 +14,7 @@
 
 ## Backend safety controls
 - Request validation on all fields.
-- Image quality gates can reject uncertain frames.
+- Image quality gates can reject uncertain frames (too dark/bright/blurry/low quality).
 - Parser requires strict structured output.
 - Decision policy clamps PWM and duration bounds.
 - Inference failures produce explicit STOP response with reason code.

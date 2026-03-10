@@ -32,6 +32,18 @@ class AppSettings(BaseSettings):
 
     min_confidence: float = Field(default=0.55, ge=0.0, le=1.0, validation_alias="MIN_CONFIDENCE")
     max_pulse_ms: int = Field(default=400, ge=1, le=2000, validation_alias="MAX_PULSE_MS")
+    quality_min_score: float = Field(
+        default=0.2, ge=0.0, le=1.0, validation_alias="QUALITY_MIN_SCORE"
+    )
+    quality_min_brightness: float = Field(
+        default=20.0, ge=0.0, le=255.0, validation_alias="QUALITY_MIN_BRIGHTNESS"
+    )
+    quality_max_brightness: float = Field(
+        default=235.0, ge=0.0, le=255.0, validation_alias="QUALITY_MAX_BRIGHTNESS"
+    )
+    quality_min_blur_score: float = Field(
+        default=2.0, ge=0.0, validation_alias="QUALITY_MIN_BLUR_SCORE"
+    )
 
     app_name: str = "zero-shot-rc-car-backend"
     app_version: str = "0.1.0"

@@ -29,6 +29,10 @@ REQUIRED_ENV_VARS: tuple[str, ...] = (
     "MODEL_TIMEOUT_S",
     "MIN_CONFIDENCE",
     "MAX_PULSE_MS",
+    "QUALITY_MIN_SCORE",
+    "QUALITY_MIN_BRIGHTNESS",
+    "QUALITY_MAX_BRIGHTNESS",
+    "QUALITY_MIN_BLUR_SCORE",
 )
 
 MIN_PYTHON: tuple[int, int] = (3, 11)
