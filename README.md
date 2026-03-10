@@ -26,11 +26,12 @@ Safety-first, offline-first software stack for zero-shot navigation of an ESP32-
    ```bash
    make install
    ```
-3. Validate local environment:
+3. Copy `.env.example` to `.env` and set local values.
+4. Validate local environment:
    ```bash
    make check-env
    ```
-4. Run static checks and tests:
+5. Run static checks and tests:
    ```bash
    make lint
    make typecheck
