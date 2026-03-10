@@ -1,8 +1,45 @@
+from __future__ import annotations
+
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-app = FastAPI(title="Zero-Shot RC Car Backend")
+from backend.app.api.routes.system import router as system_router
+from backend.app.core.config import AppSettings, get_settings
+from backend.app.core.logging import configure_logging
+
+logger = logging.getLogger(__name__)
 
 
-@app.get("/health", tags=["health"])
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def create_app(settings: AppSettings | None = None) -> FastAPI:
+    """Create and configure the FastAPI application instance."""
+
+    app_settings = settings or get_settings()
+    app_settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
+    configure_logging(app_settings.log_level)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        logger.info(
+            "backend_startup",
+            extra={"model": app_settings.ollama_model, "environment": app_settings.app_env},
+        )
+        yield
+        logger.info("backend_shutdown", extra={"environment": app_settings.app_env})
+
+    app = FastAPI(
+        title="Zero-Shot RC Car Backend",
+        version=app_settings.app_version,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        lifespan=lifespan,
+    )
+    app.state.settings = app_settings
+    app.include_router(system_router)
+
+    return app
+
+
+app = create_app()
