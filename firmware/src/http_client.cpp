@@ -88,6 +88,7 @@ bool http_client_send_frame(const FrameBuffer& frame, const FrameMetadata& metad
   append_form_field(head, boundary.c_str(), "frame_height", String(metadata.frame_height));
   append_form_field(head, boundary.c_str(), "jpeg_quality", String(metadata.jpeg_quality));
   append_form_field(head, boundary.c_str(), "mode", mode_to_string(metadata.mode));
+  append_form_field(head, boundary.c_str(), "firmware_version", fwconfig::FIRMWARE_VERSION);
 
   head += "--";
   head += boundary;

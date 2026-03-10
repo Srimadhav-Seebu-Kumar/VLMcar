@@ -6,6 +6,7 @@ namespace fwconfig {
 inline constexpr char WIFI_SSID[] = "REPLACE_WITH_WIFI_SSID";
 inline constexpr char WIFI_PASSWORD[] = "REPLACE_WITH_WIFI_PASSWORD";
 inline constexpr char DEVICE_ID[] = "rc-car-01";
+inline constexpr char FIRMWARE_VERSION[] = "0.1.0";
 
 inline constexpr char BACKEND_BASE_URL[] = "http://192.168.1.2:8000";
 inline constexpr char CONTROL_PATH[] = "/api/v1/control/frame";

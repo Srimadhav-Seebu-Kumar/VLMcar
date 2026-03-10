@@ -45,6 +45,7 @@ Serial logs must include:
 - state transitions
 - backend status and HTTP code
 - command summary (action, pwm, duration)
+- command trace/session IDs when available
 - explicit reason for every STOP event
 
 The Wi-Fi client retries connections, and the HTTP client posts multipart frame uploads using the backend contract.

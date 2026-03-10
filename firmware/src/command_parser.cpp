@@ -78,6 +78,9 @@ bool command_parser_parse(const String& payload, MotionCommand& out_command, Str
     out_command.reason_code = "SAFE_DEFAULT";
   }
   out_command.safe_to_execute = doc["safe_to_execute"].as<bool>();
+  out_command.trace_id = doc["trace_id"].is<const char*>() ? String(static_cast<const char*>(doc["trace_id"])) : "";
+  out_command.session_id =
+      doc["session_id"].is<const char*>() ? String(static_cast<const char*>(doc["session_id"])) : "";
   out_command.issued_at_ms = millis();
   out_command.lease_ms = fwconfig::COMMAND_LEASE_MS;
 

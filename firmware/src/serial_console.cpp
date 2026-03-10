@@ -39,7 +39,8 @@ void serial_console_log_state(FirmwareState from, FirmwareState to, const char* 
 void serial_console_log_error(const char* message) { Serial.printf("[error] %s\n", message); }
 
 void serial_console_log_command(const MotionCommand& command) {
-  Serial.printf("[cmd] action=%d left=%u right=%u duration=%u reason=%s\n", static_cast<int>(command.action),
-                command.left_pwm, command.right_pwm, command.duration_ms,
-                command.reason_code.c_str());
+  Serial.printf(
+      "[cmd] action=%d left=%u right=%u duration=%u reason=%s trace=%s session=%s\n",
+      static_cast<int>(command.action), command.left_pwm, command.right_pwm, command.duration_ms,
+      command.reason_code.c_str(), command.trace_id.c_str(), command.session_id.c_str());
 }

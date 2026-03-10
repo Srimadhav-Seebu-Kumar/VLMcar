@@ -54,6 +54,8 @@ struct MotionCommand {
   float confidence = 0.0f;
   String reason_code = "SAFE_DEFAULT";
   bool safe_to_execute = true;
+  String trace_id;
+  String session_id;
   uint32_t issued_at_ms = 0;
   uint32_t lease_ms = 0;
 };

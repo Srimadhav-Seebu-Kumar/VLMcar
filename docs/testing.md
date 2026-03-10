@@ -34,6 +34,14 @@ python simulator/mock_backend.py --scenario alternating_turns --port 8010
 python simulator/mock_backend.py --scenario timeout --timeout-seconds 3 --port 8010
 ```
 
+## Full local integration path
+1. Start backend pipeline: `python -m uvicorn backend.app.main:app --reload`.
+2. Validate backend health: `python tools/smoke_test_backend.py`.
+3. Build firmware: `python -m platformio run -d firmware -e esp32cam`.
+4. Set firmware backend URL in `firmware/include/config.h`.
+5. Flash firmware and monitor serial logs for `trace_id` and `session_id`.
+6. Verify command fields (`action`, PWM, `duration_ms`, `safe_to_execute`) are present and parsed.
+
 ## Definition of done for touched behavior
 - behavior implemented with explicit error handling
 - tests added for normal and failure paths
