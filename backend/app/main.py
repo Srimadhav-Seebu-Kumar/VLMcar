@@ -10,6 +10,7 @@ from backend.app.api.routes.control import router as control_router
 from backend.app.api.routes.system import router as system_router
 from backend.app.core.config import AppSettings, get_settings
 from backend.app.core.logging import configure_logging
+from backend.app.services.inference import OllamaNativeAdapter
 from backend.app.services.storage import init_db
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,11 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = app_settings
+    app.state.inference_adapter = OllamaNativeAdapter(
+        base_url=app_settings.ollama_base_url,
+        model=app_settings.ollama_model,
+        timeout_s=app_settings.model_timeout_s,
+    )
     app.include_router(system_router)
     app.include_router(control_router)
 

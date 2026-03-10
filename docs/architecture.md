@@ -45,6 +45,7 @@ BOOT -> WIFI_CONNECTING -> BACKEND_WAIT -> CAPTURE -> UPLOAD -> DECIDE -> EXECUT
 - Decision pipeline: preprocess, quality gate, inference, parse, policy.
 - Persistence layer: session/frame/decision/error metadata in SQLite.
 - Operator controls: emergency stop and mode toggles.
+- Inference adapter: `OllamaNativeAdapter` wraps `/api/generate` with strict error handling.
 
 ## Firmware boundaries
 - Camera module: configured JPEG capture only.
