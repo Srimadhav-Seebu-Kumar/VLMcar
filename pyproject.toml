@@ -28,6 +28,7 @@ dev = [
   "ruff>=0.6,<1.0",
   "mypy>=1.11,<2.0",
   "pre-commit>=3.8,<4.0",
+  "types-jsonschema>=4.23.0.20241208",
 ]
 
 [tool.setuptools]
@@ -57,4 +58,8 @@ warn_unused_configs = true
 mypy_path = "."
 packages = ["backend"]
 exclude = ["firmware", "notebooks"]
+
+[[tool.mypy.overrides]]
+module = ["jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
 

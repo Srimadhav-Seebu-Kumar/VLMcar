@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlmcar.local/contracts/frame_request.schema.json",
+  "title": "FrameRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "device_id",
+    "seq",
+    "timestamp_ms",
+    "frame_width",
+    "frame_height",
+    "jpeg_quality",
+    "mode"
+  ],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "session_id": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "frame_width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4096
+    },
+    "frame_height": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4096
+    },
+    "jpeg_quality": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 63
+    },
+    "battery_mv": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["AUTO", "MANUAL", "ESTOP", "IDLE"]
+    },
+    "firmware_version": {
+      "type": ["string", "null"],
+      "maxLength": 64
+    },
+    "ir_left": {
+      "type": ["number", "null"]
+    },
+    "ir_right": {
+      "type": ["number", "null"]
+    },
+    "gps": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["lat", "lon"],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      }
+    }
+  }
+}

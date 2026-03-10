@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlmcar.local/contracts/session.schema.json",
+  "title": "SessionMetadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "device_id",
+    "prompt_version",
+    "model_name",
+    "started_at_ms",
+    "status"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "prompt_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "model_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "operator_notes": {
+      "type": ["string", "null"],
+      "maxLength": 512
+    },
+    "started_at_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ended_at_ms": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "CLOSED"]
+    }
+  }
+}

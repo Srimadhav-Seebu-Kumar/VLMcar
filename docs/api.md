@@ -40,11 +40,11 @@ Multipart fields:
 - `backend_latency_ms`, `model_latency_ms`: timing metadata.
 - `safe_to_execute`: boolean.
 
-## Schema source of truth
-Contracts are versioned in:
-- `contracts/frame_request.schema.json`
-- `contracts/command_response.schema.json`
-- `contracts/telemetry.schema.json`
-- `contracts/session.schema.json`
+## Canonical contracts
+JSON schemas in `contracts/` are the source of truth:
+- [frame_request.schema.json](../contracts/frame_request.schema.json)
+- [command_response.schema.json](../contracts/command_response.schema.json)
+- [telemetry.schema.json](../contracts/telemetry.schema.json)
+- [session.schema.json](../contracts/session.schema.json)
 
-Backend schema mirrors live in `backend/app/schemas/` and must remain aligned.
+Pydantic mirrors are in `backend/app/schemas/`. Any contract update must change both and add/update validation tests.

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlmcar.local/contracts/command_response.schema.json",
+  "title": "CommandResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trace_id",
+    "session_id",
+    "seq",
+    "action",
+    "left_pwm",
+    "right_pwm",
+    "duration_ms",
+    "confidence",
+    "reason_code",
+    "message",
+    "backend_latency_ms",
+    "model_latency_ms",
+    "safe_to_execute"
+  ],
+  "properties": {
+    "trace_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "action": {
+      "type": "string",
+      "enum": ["FORWARD", "LEFT", "RIGHT", "STOP"]
+    },
+    "left_pwm": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "right_pwm": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "backend_latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "model_latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "safe_to_execute": {
+      "type": "boolean"
+    }
+  }
+}
