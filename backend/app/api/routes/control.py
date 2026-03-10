@@ -8,15 +8,31 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import ValidationError
 
-from backend.app.api.deps import get_app_settings
+from backend.app.api.deps import (
+    get_app_settings,
+    get_decision_policy,
+    get_inference_adapter,
+    get_output_parser,
+    get_prompt_manager,
+)
 from backend.app.core.config import AppSettings
 from backend.app.schemas.command import CommandResponse
 from backend.app.schemas.enums import Action, DeviceMode
 from backend.app.schemas.frame import FrameRequest, GpsData
+from backend.app.services.decision import DecisionPolicy
+from backend.app.services.inference import (
+    InferenceAdapter,
+    InferenceError,
+    InferenceRequest,
+    ParseError,
+    PromptManager,
+    StructuredOutputParser,
+)
 from backend.app.services.preprocess import preprocess_frame
 from backend.app.services.quality_gate import evaluate_quality
 from backend.app.services.storage import (
     DecisionRepository,
+    ErrorRepository,
     FrameFileStore,
     FrameRepository,
     session_scope,
@@ -34,6 +50,8 @@ def build_stop_command(
     reason_code: str,
     message: str,
     backend_latency_ms: int,
+    model_latency_ms: int,
+    safe_to_execute: bool,
 ) -> CommandResponse:
     """Build a deterministic STOP command payload for safety fallback paths."""
 
@@ -49,14 +67,18 @@ def build_stop_command(
         reason_code=reason_code,
         message=message,
         backend_latency_ms=backend_latency_ms,
-        model_latency_ms=0,
-        safe_to_execute=True,
+        model_latency_ms=model_latency_ms,
+        safe_to_execute=safe_to_execute,
     )
 
 
 @router.post("/frame", response_model=CommandResponse)
 async def ingest_frame(
     settings: Annotated[AppSettings, Depends(get_app_settings)],
+    inference_adapter: Annotated[InferenceAdapter, Depends(get_inference_adapter)],
+    prompt_manager: Annotated[PromptManager, Depends(get_prompt_manager)],
+    output_parser: Annotated[StructuredOutputParser, Depends(get_output_parser)],
+    decision_policy: Annotated[DecisionPolicy, Depends(get_decision_policy)],
     image: UploadFile = File(...),
     device_id: str = Form(...),
     session_id: UUID | None = Form(default=None),
@@ -73,7 +95,7 @@ async def ingest_frame(
     gps_lat: float | None = Form(default=None),
     gps_lon: float | None = Form(default=None),
 ) -> CommandResponse:
-    """Accept a multipart frame upload and return conservative placeholder STOP."""
+    """Run full preprocess -> quality gate -> infer -> parse -> policy control pipeline."""
 
     started = time.perf_counter()
 
@@ -130,22 +152,79 @@ async def ingest_frame(
         payload=payload,
     )
 
-    backend_latency_ms = int((time.perf_counter() - started) * 1000)
-
-    reason_code = "PLACEHOLDER_STOP"
-    message = "Frame accepted; placeholder stop response."
+    model_latency_ms = 0
     if not quality_decision.accepted:
-        reason_code = quality_decision.reason_code
-        message = quality_decision.message
+        command = build_stop_command(
+            trace_id=trace_id,
+            session_id=resolved_session_id,
+            seq=metadata.seq,
+            reason_code=quality_decision.reason_code,
+            message=quality_decision.message,
+            backend_latency_ms=0,
+            model_latency_ms=0,
+            safe_to_execute=True,
+        )
+    else:
+        prompt_bundle = prompt_manager.build_prompt(
+            frame=metadata_with_session,
+            prompt_version=settings.prompt_version,
+        )
+        try:
+            inference_result = await inference_adapter.infer(
+                InferenceRequest(
+                    prompt=prompt_bundle.text,
+                    image_bytes=preprocess_result.normalized_jpeg,
+                    trace_id=trace_id,
+                    session_id=resolved_session_id,
+                )
+            )
+            model_latency_ms = inference_result.model_latency_ms
+            parsed_decision = output_parser.parse(inference_result.raw_output)
+            command = decision_policy.to_command(
+                decision=parsed_decision,
+                trace_id=trace_id,
+                session_id=resolved_session_id,
+                seq=metadata.seq,
+                backend_latency_ms=0,
+                model_latency_ms=model_latency_ms,
+                estop_active=False,
+            )
+        except InferenceError as exc:
+            command = build_stop_command(
+                trace_id=trace_id,
+                session_id=resolved_session_id,
+                seq=metadata.seq,
+                reason_code="INFERENCE_ERROR",
+                message=str(exc),
+                backend_latency_ms=0,
+                model_latency_ms=model_latency_ms,
+                safe_to_execute=False,
+            )
+        except ParseError as exc:
+            command = build_stop_command(
+                trace_id=trace_id,
+                session_id=resolved_session_id,
+                seq=metadata.seq,
+                reason_code="PARSE_ERROR",
+                message=str(exc),
+                backend_latency_ms=0,
+                model_latency_ms=model_latency_ms,
+                safe_to_execute=False,
+            )
+        except Exception as exc:
+            command = build_stop_command(
+                trace_id=trace_id,
+                session_id=resolved_session_id,
+                seq=metadata.seq,
+                reason_code="INTERNAL_ERROR",
+                message=str(exc),
+                backend_latency_ms=0,
+                model_latency_ms=model_latency_ms,
+                safe_to_execute=False,
+            )
 
-    command = build_stop_command(
-        trace_id=trace_id,
-        session_id=resolved_session_id,
-        seq=metadata.seq,
-        reason_code=reason_code,
-        message=message,
-        backend_latency_ms=backend_latency_ms,
-    )
+    backend_latency_ms = int((time.perf_counter() - started) * 1000)
+    command = command.model_copy(update={"backend_latency_ms": backend_latency_ms})
 
     with session_scope(settings.database_url) as db:
         frame_record = FrameRepository(db).create(
@@ -156,6 +235,14 @@ async def ingest_frame(
             quality_metrics=preprocess_result.metrics,
         )
         DecisionRepository(db).create(command=command, frame_id=frame_record.id)
+        if command.reason_code in {"INFERENCE_ERROR", "PARSE_ERROR", "INTERNAL_ERROR"}:
+            ErrorRepository(db).create(
+                error_code=command.reason_code,
+                error_message=command.message,
+                session_id=resolved_session_id,
+                device_id=metadata.device_id,
+                trace_id=trace_id,
+            )
 
     logger.info(
         "frame_decision",
@@ -165,7 +252,10 @@ async def ingest_frame(
             "device_id": metadata.device_id,
             "route": "/api/v1/control/frame",
             "frame_id": frame_record.id,
-            "reason_code": reason_code,
+            "reason_code": command.reason_code,
+            "action": command.action.value,
+            "model_latency_ms": command.model_latency_ms,
+            "prompt_version": settings.prompt_version,
         },
     )
 

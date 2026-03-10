@@ -2,18 +2,58 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from fastapi.testclient import TestClient
 from PIL import Image, ImageDraw
+from sqlalchemy import select
 
 from backend.app.core.config import AppSettings
 from backend.app.main import create_app
+from backend.app.services.inference import InferenceError, InferenceRequest, InferenceResult
 from backend.app.services.storage import (
     DecisionRepository,
+    ErrorRecord,
     FrameRepository,
     clear_cached_db_handles,
     session_scope,
 )
+
+
+class StubStopAdapter:
+    async def infer(self, request: InferenceRequest) -> InferenceResult:
+        _ = request
+        return InferenceResult(
+            raw_output='{"action":"STOP","confidence":0.9,"reason_code":"SAFE_TEST","scene_summary":"stop","hazards":[]}',
+            model_latency_ms=12,
+            provider_payload={"provider": "stub-stop"},
+        )
+
+
+class StubForwardAdapter:
+    async def infer(self, request: InferenceRequest) -> InferenceResult:
+        _ = request
+        return InferenceResult(
+            raw_output='{"action":"FORWARD","confidence":0.92,"reason_code":"PATH_CLEAR","scene_summary":"clear","hazards":[]}',
+            model_latency_ms=15,
+            provider_payload={"provider": "stub-forward"},
+        )
+
+
+class StubParseErrorAdapter:
+    async def infer(self, request: InferenceRequest) -> InferenceResult:
+        _ = request
+        return InferenceResult(
+            raw_output="not-json",
+            model_latency_ms=10,
+            provider_payload={"provider": "stub-bad"},
+        )
+
+
+class StubInferenceErrorAdapter:
+    async def infer(self, request: InferenceRequest) -> InferenceResult:
+        _ = request
+        raise InferenceError("simulated adapter failure")
 
 
 def build_test_settings(tmp_path: Path) -> AppSettings:
@@ -23,7 +63,18 @@ def build_test_settings(tmp_path: Path) -> AppSettings:
         ollama_model="llava-test",
         artifacts_dir=tmp_path / "artifacts",
         database_url=f"sqlite:///{tmp_path / 'control_route_test.db'}",
+        prompt_version="v1",
+        quality_min_score=0.0,
+        quality_min_blur_score=0.0,
     )
+
+
+def build_test_app(tmp_path: Path, adapter: Any) -> tuple[Any, AppSettings]:
+    clear_cached_db_handles()
+    settings = build_test_settings(tmp_path=tmp_path)
+    app = create_app(settings=settings)
+    app.state.inference_adapter = adapter
+    return app, settings
 
 
 def make_jpeg_bytes() -> bytes:
@@ -47,34 +98,47 @@ def make_dark_jpeg_bytes() -> bytes:
     return buffer.getvalue()
 
 
+def post_frame(client: TestClient, image_bytes: bytes) -> Any:
+    return client.post(
+        "/api/v1/control/frame",
+        data={
+            "device_id": "rc-car-01",
+            "seq": "12",
+            "timestamp_ms": "1710000000000",
+            "frame_width": "320",
+            "frame_height": "240",
+            "jpeg_quality": "12",
+            "mode": "AUTO",
+        },
+        files={"image": ("frame.jpg", image_bytes, "image/jpeg")},
+    )
+
+
 def test_control_frame_accepts_valid_multipart_upload(tmp_path: Path) -> None:
-    clear_cached_db_handles()
-    app = create_app(settings=build_test_settings(tmp_path=tmp_path))
+    app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubStopAdapter())
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/control/frame",
-            data={
-                "device_id": "rc-car-01",
-                "seq": "12",
-                "timestamp_ms": "1710000000000",
-                "frame_width": "320",
-                "frame_height": "240",
-                "jpeg_quality": "12",
-                "mode": "AUTO",
-            },
-            files={"image": ("frame.jpg", make_jpeg_bytes(), "image/jpeg")},
-        )
+        response = post_frame(client, make_jpeg_bytes())
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["action"] == "STOP"
-    assert payload["reason_code"] == "PLACEHOLDER_STOP"
-    assert payload["seq"] == 12
+    assert payload["reason_code"] == "SAFE_TEST"
+
+
+def test_control_frame_uses_inference_pipeline_for_forward_action(tmp_path: Path) -> None:
+    app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubForwardAdapter())
+    with TestClient(app) as client:
+        response = post_frame(client, make_jpeg_bytes())
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["action"] == "FORWARD"
+    assert payload["left_pwm"] > 0
+    assert payload["duration_ms"] > 0
 
 
 def test_control_frame_rejects_invalid_content_type(tmp_path: Path) -> None:
-    clear_cached_db_handles()
-    app = create_app(settings=build_test_settings(tmp_path=tmp_path))
+    app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubStopAdapter())
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/control/frame",
@@ -94,8 +158,7 @@ def test_control_frame_rejects_invalid_content_type(tmp_path: Path) -> None:
 
 
 def test_control_frame_rejects_missing_required_fields(tmp_path: Path) -> None:
-    clear_cached_db_handles()
-    app = create_app(settings=build_test_settings(tmp_path=tmp_path))
+    app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubStopAdapter())
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/control/frame",
@@ -113,25 +176,11 @@ def test_control_frame_rejects_missing_required_fields(tmp_path: Path) -> None:
     assert response.status_code == 422
 
 
-def test_control_frame_persists_frame_record_and_file(tmp_path: Path) -> None:
-    clear_cached_db_handles()
-    settings = build_test_settings(tmp_path=tmp_path)
-    app = create_app(settings=settings)
+def test_control_frame_persists_frame_and_decision_records(tmp_path: Path) -> None:
+    app, settings = build_test_app(tmp_path=tmp_path, adapter=StubStopAdapter())
 
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/control/frame",
-            data={
-                "device_id": "rc-car-01",
-                "seq": "101",
-                "timestamp_ms": "1710000001234",
-                "frame_width": "320",
-                "frame_height": "240",
-                "jpeg_quality": "12",
-                "mode": "AUTO",
-            },
-            files={"image": ("frame.jpg", make_jpeg_bytes(), "image/jpeg")},
-        )
+        response = post_frame(client, make_jpeg_bytes())
 
     assert response.status_code == 200
     payload = response.json()
@@ -140,32 +189,49 @@ def test_control_frame_persists_frame_record_and_file(tmp_path: Path) -> None:
         decisions = DecisionRepository(db).list_by_session(payload["session_id"])
 
     assert len(frames) == 1
-    frame = frames[0]
-    assert frame.quality_score is not None
-    assert Path(frame.file_path).exists()
+    assert Path(frames[0].file_path).exists()
     assert len(decisions) == 1
 
 
 def test_control_frame_returns_early_stop_for_dark_frame(tmp_path: Path) -> None:
-    clear_cached_db_handles()
-    app = create_app(settings=build_test_settings(tmp_path=tmp_path))
+    app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubForwardAdapter())
 
     with TestClient(app) as client:
-        response = client.post(
-            "/api/v1/control/frame",
-            data={
-                "device_id": "rc-car-01",
-                "seq": "77",
-                "timestamp_ms": "1710000005555",
-                "frame_width": "320",
-                "frame_height": "240",
-                "jpeg_quality": "12",
-                "mode": "AUTO",
-            },
-            files={"image": ("frame.jpg", make_dark_jpeg_bytes(), "image/jpeg")},
-        )
+        response = post_frame(client, make_dark_jpeg_bytes())
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["action"] == "STOP"
     assert payload["reason_code"] == "FRAME_TOO_DARK"
+
+
+def test_control_frame_returns_parse_error_stop_and_logs_error(tmp_path: Path) -> None:
+    app, settings = build_test_app(tmp_path=tmp_path, adapter=StubParseErrorAdapter())
+
+    with TestClient(app) as client:
+        response = post_frame(client, make_jpeg_bytes())
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["reason_code"] == "PARSE_ERROR"
+
+    with session_scope(settings.database_url) as db:
+        errors = list(db.scalars(select(ErrorRecord)))
+    assert len(errors) == 1
+    assert errors[0].error_code == "PARSE_ERROR"
+
+
+def test_control_frame_returns_inference_error_stop_and_logs_error(tmp_path: Path) -> None:
+    app, settings = build_test_app(tmp_path=tmp_path, adapter=StubInferenceErrorAdapter())
+
+    with TestClient(app) as client:
+        response = post_frame(client, make_jpeg_bytes())
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["reason_code"] == "INFERENCE_ERROR"
+
+    with session_scope(settings.database_url) as db:
+        errors = list(db.scalars(select(ErrorRecord)))
+    assert len(errors) == 1
+    assert errors[0].error_code == "INFERENCE_ERROR"

@@ -40,6 +40,17 @@ BOOT -> WIFI_CONNECTING -> BACKEND_WAIT -> CAPTURE -> UPLOAD -> DECIDE -> EXECUT
                                             ERROR ------- STOP
 ```
 
+Backend `/api/v1/control/frame` pipeline:
+1. Validate multipart metadata and JPEG content type.
+2. Preprocess frame and compute quality metrics.
+3. Apply quality gate (early STOP on poor frame quality).
+4. Build prompt from versioned prompt files.
+5. Call local Ollama adapter for inference.
+6. Parse structured model JSON with schema validation.
+7. Apply safety overrides and pulse shaping policy.
+8. Persist frame/decision/error records with trace metadata.
+9. Return bounded command response.
+
 ## Backend boundaries
 - API layer: input validation and typed responses.
 - Decision pipeline: preprocess, quality gate, inference, parse, policy.

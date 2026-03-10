@@ -27,6 +27,7 @@ REQUIRED_ENV_VARS: tuple[str, ...] = (
     "OLLAMA_BASE_URL",
     "OLLAMA_MODEL",
     "MODEL_TIMEOUT_S",
+    "PROMPT_VERSION",
     "MIN_CONFIDENCE",
     "MAX_PULSE_MS",
     "QUALITY_MIN_SCORE",
