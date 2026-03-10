@@ -33,6 +33,9 @@ REQUIRED_ENV_VARS: tuple[str, ...] = (
     "QUALITY_MIN_BRIGHTNESS",
     "QUALITY_MAX_BRIGHTNESS",
     "QUALITY_MIN_BLUR_SCORE",
+    "FORWARD_PWM_BASE",
+    "TURN_PWM_BASE",
+    "MIN_PULSE_MS",
 )
 
 MIN_PYTHON: tuple[int, int] = (3, 11)

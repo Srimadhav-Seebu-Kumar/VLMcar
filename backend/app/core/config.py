@@ -44,6 +44,9 @@ class AppSettings(BaseSettings):
     quality_min_blur_score: float = Field(
         default=2.0, ge=0.0, validation_alias="QUALITY_MIN_BLUR_SCORE"
     )
+    forward_pwm_base: int = Field(default=120, ge=0, le=255, validation_alias="FORWARD_PWM_BASE")
+    turn_pwm_base: int = Field(default=105, ge=0, le=255, validation_alias="TURN_PWM_BASE")
+    min_pulse_ms: int = Field(default=120, ge=0, le=2000, validation_alias="MIN_PULSE_MS")
 
     app_name: str = "zero-shot-rc-car-backend"
     app_version: str = "0.1.0"
