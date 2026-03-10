@@ -18,6 +18,7 @@
 - Firmware never executes a command without successful parse and validation.
 - Every motion command has finite `duration_ms`.
 - Motors are stopped at end of pulse and on every error path.
+- Camera capture requires explicit frame release before next capture.
 
 ## State transitions
 
