@@ -1,0 +1,10 @@
+Return JSON with fields: action, confidence, reason_code, scene_summary, hazards.
+Allowed action values: FORWARD, LEFT, RIGHT, STOP.
+Rules:
+- If path is uncertain, choose STOP.
+- If path is blocked, choose STOP.
+- If center is clear and stable, choose FORWARD.
+- If center blocked and left appears safer, choose LEFT.
+- If center blocked and right appears safer, choose RIGHT.
+- Keep scene_summary concise.
+- hazards must be a list of short strings.

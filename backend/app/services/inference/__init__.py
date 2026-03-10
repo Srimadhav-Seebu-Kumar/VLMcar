@@ -5,6 +5,8 @@ from backend.app.services.inference.base import (
     InferenceResult,
 )
 from backend.app.services.inference.ollama_native import OllamaNativeAdapter
+from backend.app.services.inference.parser import ParsedDecision, ParseError, StructuredOutputParser
+from backend.app.services.inference.prompt_manager import PromptBundle, PromptManager
 
 __all__ = [
     "InferenceAdapter",
@@ -12,4 +14,9 @@ __all__ = [
     "InferenceRequest",
     "InferenceResult",
     "OllamaNativeAdapter",
+    "ParseError",
+    "ParsedDecision",
+    "PromptBundle",
+    "PromptManager",
+    "StructuredOutputParser",
 ]

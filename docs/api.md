@@ -48,3 +48,8 @@ JSON schemas in `contracts/` are the source of truth:
 - [session.schema.json](../contracts/session.schema.json)
 
 Pydantic mirrors are in `backend/app/schemas/`. Any contract update must change both and add/update validation tests.
+
+## Model decision contract
+- Prompt templates are versioned in `prompts/decision_prompt_v1.txt` and `prompts/decision_prompt_v2.txt`.
+- The expected model JSON output is validated with `prompts/json_schema_decision.json`.
+- Backend parser rejects malformed output and triggers STOP fallback behavior.
