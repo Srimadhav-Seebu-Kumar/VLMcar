@@ -24,6 +24,12 @@
 3. Review logs for action distribution and stop rate.
 4. Use replay tooling to compare prompt versions.
 
+Example:
+```bash
+python -m simulator.cli episode --map straight_corridor --max-steps 40
+python -m simulator.cli replay --steps-jsonl tmp_artifacts/sim_runs/<session_id>/steps.jsonl
+```
+
 ## Mock backend for firmware bring-up
 Use deterministic scenarios when firmware integration starts before model tuning is stable:
 
@@ -47,3 +53,11 @@ python simulator/mock_backend.py --scenario timeout --timeout-seconds 3 --port 8
 - tests added for normal and failure paths
 - docs updated
 - config updated if new variables are introduced
+
+## Real-scene laptop camera validation
+Use webcam frames to validate model guidance before powering hardware:
+```bash
+python -m simulator.cli webcam --camera-index 0 --max-frames 200 --show-preview
+```
+
+This path uses the same backend contract and keeps STOP-on-error behavior.

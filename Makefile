@@ -1,6 +1,7 @@
 SHELL := /bin/bash
+STEPS_JSONL ?= tmp_artifacts/sim_runs/steps.jsonl
 
-.PHONY: install lint format typecheck test run-backend check-env smoke-backend smoke-ollama firmware-build precommit
+.PHONY: install lint format typecheck test run-backend run-sim run-webcam replay-sim check-env smoke-backend smoke-ollama firmware-build precommit
 
 install:
 	python -m pip install --upgrade pip
@@ -20,6 +21,15 @@ test:
 
 run-backend:
 	python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+run-sim:
+	python -m simulator.cli episode
+
+replay-sim:
+	python -m simulator.cli replay --steps-jsonl $(STEPS_JSONL)
+
+run-webcam:
+	python -m simulator.cli webcam --show-preview
 
 check-env:
 	python tools/check_env.py

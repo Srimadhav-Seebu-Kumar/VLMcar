@@ -1,1 +1,1 @@
-"""Simulation utilities package."""
+"""Simulation and replay utilities for offline RC car testing."""

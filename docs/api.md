@@ -5,6 +5,7 @@
 - Content type for frame ingress: `multipart/form-data`
 - Response format: JSON matching command contract
 - Safety fallback: backend returns `STOP` on validation/inference errors
+- Same contract is used by ESP32 firmware, simulator, replay, and laptop webcam loops.
 
 ## Core endpoints
 - `GET /health`: liveness probe.

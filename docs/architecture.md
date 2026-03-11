@@ -30,6 +30,15 @@ This monorepo contains a full offline control stack for a zero-shot RC car proje
 +--------------------+                            +-----------------------+
 ```
 
+Hardware-free and real-scene preflight loops use the same frame/command contract:
+
+```text
++--------------------+     HTTP multipart     +------------------------+
+| Simulator + Replay | ---------------------> | FastAPI Backend        |
+| Laptop Webcam Loop |                        | validate + decide      |
++--------------------+                        +------------------------+
+```
+
 ## Control loop
 
 ```text
