@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/seyan/Documents/Projcts/VLMcar/backend/tests/**/*.py)",
+      "Bash(where.exe ollama:*)",
+      "Read(//c/Users/seyan/AppData/Local/Programs/Ollama/**)",
+      "Bash(curl -s http://127.0.0.1:11434/api/tags)",
+      "Bash(python -m pytest backend/tests/ -q)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest backend/tests/ -q --ignore=backend/tests/unit/test_repo_layout.py)",
+      "Bash(python -m ruff check backend/app/api/routes/control.py backend/app/api/routes/system.py backend/app/main.py backend/app/schemas/command.py)"
+    ]
+  }
+}
