@@ -49,7 +49,7 @@
     "duration_ms": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 1000
+      "maximum": 500
     },
     "confidence": {
       "type": "number",

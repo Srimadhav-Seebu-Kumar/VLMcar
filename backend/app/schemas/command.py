@@ -18,7 +18,7 @@ class CommandResponse(BaseModel):
     action: Action
     left_pwm: int = Field(ge=0, le=255)
     right_pwm: int = Field(ge=0, le=255)
-    duration_ms: int = Field(ge=0, le=1000)
+    duration_ms: int = Field(ge=0, le=500)
     confidence: float = Field(ge=0.0, le=1.0)
     reason_code: str = Field(min_length=1, max_length=64)
     message: str = Field(max_length=256)

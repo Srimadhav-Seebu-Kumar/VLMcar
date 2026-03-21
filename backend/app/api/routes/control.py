@@ -5,7 +5,7 @@ import time
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import ValidationError
 
 from backend.app.api.deps import (
@@ -17,8 +17,10 @@ from backend.app.api.deps import (
 )
 from backend.app.core.config import AppSettings
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action, DeviceMode
+from backend.app.schemas.enums import Action, DeviceMode, SessionStatus
 from backend.app.schemas.frame import FrameRequest, GpsData
+from backend.app.schemas.session import SessionMetadata
+from backend.app.schemas.telemetry import TelemetryPayload
 from backend.app.services.decision import DecisionPolicy
 from backend.app.services.inference import (
     InferenceAdapter,
@@ -35,6 +37,8 @@ from backend.app.services.storage import (
     ErrorRepository,
     FrameFileStore,
     FrameRepository,
+    SessionRepository,
+    TelemetryRepository,
     session_scope,
 )
 
@@ -72,8 +76,37 @@ def build_stop_command(
     )
 
 
+def _ensure_session(
+    db_url: str,
+    session_id: UUID,
+    device_id: str,
+    prompt_version: str,
+    model_name: str,
+    timestamp_ms: int,
+) -> None:
+    """Create a SessionRecord if one does not already exist for this session_id."""
+
+    try:
+        with session_scope(db_url) as db:
+            repo = SessionRepository(db)
+            if repo.get(session_id) is None:
+                repo.create(
+                    SessionMetadata(
+                        session_id=session_id,
+                        device_id=device_id,
+                        prompt_version=prompt_version,
+                        model_name=model_name,
+                        started_at_ms=timestamp_ms,
+                        status=SessionStatus.ACTIVE,
+                    )
+                )
+    except Exception:
+        logger.warning("session_create_failed", extra={"session_id": str(session_id)})
+
+
 @router.post("/frame", response_model=CommandResponse)
 async def ingest_frame(
+    request: Request,
     settings: Annotated[AppSettings, Depends(get_app_settings)],
     inference_adapter: Annotated[InferenceAdapter, Depends(get_inference_adapter)],
     prompt_manager: Annotated[PromptManager, Depends(get_prompt_manager)],
@@ -95,7 +128,37 @@ async def ingest_frame(
     gps_lat: float | None = Form(default=None),
     gps_lon: float | None = Form(default=None),
 ) -> CommandResponse:
-    """Run full preprocess -> quality gate -> infer -> parse -> policy control pipeline."""
+    """Receive all bot telemetry and frame data, return a predetermined action command.
+
+    Input (multipart/form-data):
+        image          - JPEG frame from bot camera (required)
+        device_id      - unique bot identifier (required)
+        seq            - frame sequence counter (required)
+        timestamp_ms   - capture timestamp in milliseconds (required)
+        frame_width    - image width in pixels (required)
+        frame_height   - image height in pixels (required)
+        jpeg_quality   - JPEG compression quality 1-63 (required)
+        mode           - device operating mode: AUTO|MANUAL|ESTOP|IDLE (required)
+        session_id     - session UUID, auto-generated if omitted (optional)
+        battery_mv     - battery voltage in millivolts (optional)
+        firmware_version - firmware semver string (optional)
+        ir_left        - left IR distance sensor reading (optional)
+        ir_right       - right IR distance sensor reading (optional)
+        gps_lat        - GPS latitude -90 to 90 (optional)
+        gps_lon        - GPS longitude -180 to 180 (optional)
+
+    Output (JSON):
+        action         - one of: FORWARD, LEFT, RIGHT, STOP
+        left_pwm       - left motor PWM 0-255
+        right_pwm      - right motor PWM 0-255
+        duration_ms    - pulse duration 0-500ms
+        confidence     - model confidence 0.0-1.0
+        reason_code    - machine-readable decision reason
+        safe_to_execute - whether firmware should execute this command
+        trace_id, session_id, seq - traceability identifiers
+        backend_latency_ms, model_latency_ms - timing metadata
+        message        - human-readable explanation
+    """
 
     started = time.perf_counter()
 
@@ -135,6 +198,16 @@ async def ingest_frame(
     resolved_session_id = metadata.session_id or uuid4()
     metadata_with_session = metadata.model_copy(update={"session_id": resolved_session_id})
 
+    # Auto-create session record on first frame for this session
+    _ensure_session(
+        db_url=settings.database_url,
+        session_id=resolved_session_id,
+        device_id=metadata.device_id,
+        prompt_version=settings.prompt_version,
+        model_name=settings.ollama_model,
+        timestamp_ms=metadata.timestamp_ms,
+    )
+
     preprocess_result = preprocess_frame(payload)
     quality_decision = evaluate_quality(
         metrics=preprocess_result.metrics,
@@ -152,8 +225,22 @@ async def ingest_frame(
         payload=payload,
     )
 
+    # Read remote e-stop state from app
+    estop_active: bool = getattr(request.app.state, "estop_active", False)
+
     model_latency_ms = 0
-    if not quality_decision.accepted:
+    if estop_active:
+        command = build_stop_command(
+            trace_id=trace_id,
+            session_id=resolved_session_id,
+            seq=metadata.seq,
+            reason_code="ESTOP_ACTIVE",
+            message="remote emergency stop is active",
+            backend_latency_ms=0,
+            model_latency_ms=0,
+            safe_to_execute=False,
+        )
+    elif not quality_decision.accepted:
         command = build_stop_command(
             trace_id=trace_id,
             session_id=resolved_session_id,
@@ -187,7 +274,7 @@ async def ingest_frame(
                 seq=metadata.seq,
                 backend_latency_ms=0,
                 model_latency_ms=model_latency_ms,
-                estop_active=False,
+                estop_active=estop_active,
             )
         except InferenceError as exc:
             command = build_stop_command(
@@ -226,23 +313,34 @@ async def ingest_frame(
     backend_latency_ms = int((time.perf_counter() - started) * 1000)
     command = command.model_copy(update={"backend_latency_ms": backend_latency_ms})
 
-    with session_scope(settings.database_url) as db:
-        frame_record = FrameRepository(db).create(
-            metadata=metadata_with_session,
-            file_path=str(stored_frame.file_path),
-            content_type=content_type,
-            payload_size_bytes=stored_frame.payload_size_bytes,
-            quality_metrics=preprocess_result.metrics,
-        )
-        DecisionRepository(db).create(command=command, frame_id=frame_record.id)
-        if command.reason_code in {"INFERENCE_ERROR", "PARSE_ERROR", "INTERNAL_ERROR"}:
-            ErrorRepository(db).create(
-                error_code=command.reason_code,
-                error_message=command.message,
-                session_id=resolved_session_id,
-                device_id=metadata.device_id,
-                trace_id=trace_id,
+    # Persist frame and decision records — failures must not block the command
+    try:
+        with session_scope(settings.database_url) as db:
+            frame_record = FrameRepository(db).create(
+                metadata=metadata_with_session,
+                file_path=str(stored_frame.file_path),
+                content_type=content_type,
+                payload_size_bytes=stored_frame.payload_size_bytes,
+                quality_metrics=preprocess_result.metrics,
             )
+            DecisionRepository(db).create(command=command, frame_id=frame_record.id)
+            if command.reason_code in {"INFERENCE_ERROR", "PARSE_ERROR", "INTERNAL_ERROR"}:
+                ErrorRepository(db).create(
+                    error_code=command.reason_code,
+                    error_message=command.message,
+                    session_id=resolved_session_id,
+                    device_id=metadata.device_id,
+                    trace_id=trace_id,
+                )
+    except Exception:
+        logger.exception(
+            "db_persist_failed",
+            extra={
+                "trace_id": str(trace_id),
+                "session_id": str(resolved_session_id),
+                "action": command.action.value,
+            },
+        )
 
     logger.info(
         "frame_decision",
@@ -251,7 +349,6 @@ async def ingest_frame(
             "session_id": str(resolved_session_id),
             "device_id": metadata.device_id,
             "route": "/api/v1/control/frame",
-            "frame_id": frame_record.id,
             "reason_code": command.reason_code,
             "action": command.action.value,
             "model_latency_ms": command.model_latency_ms,
@@ -260,3 +357,41 @@ async def ingest_frame(
     )
 
     return command
+
+
+@router.post("/telemetry")
+def ingest_telemetry(
+    settings: Annotated[AppSettings, Depends(get_app_settings)],
+    payload: TelemetryPayload,
+) -> dict[str, object]:
+    """Receive periodic telemetry from the bot and persist for monitoring.
+
+    Input (JSON):
+        device_id         - bot identifier (required)
+        session_id        - session UUID (optional)
+        timestamp_ms      - telemetry timestamp (required)
+        uptime_ms         - firmware uptime (required)
+        free_heap_bytes   - available heap memory (required)
+        wifi_rssi_dbm     - WiFi signal strength (required)
+        battery_mv        - battery voltage in millivolts (required)
+        frame_counter     - frames processed since boot (required)
+        avg_loop_latency_ms - average loop cycle time (required)
+        last_action       - most recent action executed (optional)
+        last_error        - most recent error message (optional)
+        mode              - current device mode: AUTO|MANUAL|ESTOP|IDLE (required)
+
+    Output (JSON):
+        status            - "ok" on success
+        device_id         - echoed back for confirmation
+    """
+
+    try:
+        with session_scope(settings.database_url) as db:
+            TelemetryRepository(db).create(payload)
+    except Exception:
+        logger.exception(
+            "telemetry_persist_failed",
+            extra={"device_id": payload.device_id},
+        )
+
+    return {"status": "ok", "device_id": payload.device_id}

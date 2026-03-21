@@ -49,6 +49,7 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     repo_root = Path(__file__).resolve().parents[2]
     prompts_dir = repo_root / "prompts"
     app.state.settings = app_settings
+    app.state.estop_active = False
     app.state.inference_adapter = OllamaNativeAdapter(
         base_url=app_settings.ollama_base_url,
         model=app_settings.ollama_model,
