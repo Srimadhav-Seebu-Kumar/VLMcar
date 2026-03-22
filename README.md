@@ -50,6 +50,7 @@ Safety-first, offline-first software stack for zero-shot navigation of an ESP32-
 ## Simulation and laptop camera
 - Full simulation workflow: [`docs/simulation.md`](docs/simulation.md)
 - Testing strategy and hardware-free validation: [`docs/testing.md`](docs/testing.md)
+- Module-by-module reference docs: [`docs/modules/README.md`](docs/modules/README.md)
 
 ## Safety defaults
 - Any uncertainty, parsing error, timeout, or invalid input must result in `STOP`.
