@@ -1,0 +1,206 @@
+{
+  "eval_date": "2026-03-22",
+  "model": "llava:latest (7B Q4_0)",
+  "prompt_version": "v3",
+  "direct_results": [
+    {
+      "scenario": "01_clear_corridor",
+      "description": "Clear corridor, no obstacles",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 0.9,
+      "correct": true,
+      "latency_s": 3.462,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.9}"
+    },
+    {
+      "scenario": "02_dead_end",
+      "description": "Wall blocking entire path ahead",
+      "expected": "STOP",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.821,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "03_obstacle_right",
+      "description": "Table+chair blocking right, left clear",
+      "expected": "LEFT",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.827,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "04_obstacle_left",
+      "description": "Table+chair blocking left, right clear",
+      "expected": "RIGHT",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.953,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "05_narrow_passage",
+      "description": "Chairs both sides, center corridor open",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 0.927,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "06_center_block",
+      "description": "Large table center-right, left gap open",
+      "expected": "LEFT",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.788,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "07_person_ahead",
+      "description": "Person standing in center of corridor",
+      "expected": "STOP",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.813,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "08_cluttered_left",
+      "description": "Multiple obstacles left+center, right open",
+      "expected": "RIGHT",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.798,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "09_close_obstacle",
+      "description": "Large table very close, fills frame",
+      "expected": "STOP",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 0.86,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "10_cone_chair",
+      "description": "Cones right + chair center, left open",
+      "expected": "LEFT",
+      "actual": "FORWARD",
+      "confidence": 0.9,
+      "correct": false,
+      "latency_s": 0.786,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.9}"
+    }
+  ],
+  "backend_results": [
+    {
+      "scenario": "01_clear_corridor",
+      "expected": "FORWARD",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2644,
+      "backend_latency_ms": 2652
+    },
+    {
+      "scenario": "02_dead_end",
+      "expected": "STOP",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": true,
+      "model_latency_ms": 2575,
+      "backend_latency_ms": 2585
+    },
+    {
+      "scenario": "03_obstacle_right",
+      "expected": "LEFT",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2514,
+      "backend_latency_ms": 2527
+    },
+    {
+      "scenario": "04_obstacle_left",
+      "expected": "RIGHT",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2499,
+      "backend_latency_ms": 2509
+    },
+    {
+      "scenario": "05_narrow_passage",
+      "expected": "FORWARD",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2265,
+      "backend_latency_ms": 2277
+    },
+    {
+      "scenario": "06_center_block",
+      "expected": "LEFT",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2338,
+      "backend_latency_ms": 2346
+    },
+    {
+      "scenario": "07_person_ahead",
+      "expected": "STOP",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": true,
+      "model_latency_ms": 2757,
+      "backend_latency_ms": 2770
+    },
+    {
+      "scenario": "08_cluttered_left",
+      "expected": "RIGHT",
+      "actual": "ERROR",
+      "confidence": 0,
+      "correct": false,
+      "model_latency_ms": 0,
+      "backend_latency_ms": 0
+    },
+    {
+      "scenario": "09_close_obstacle",
+      "expected": "STOP",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": true,
+      "model_latency_ms": 2526,
+      "backend_latency_ms": 2534
+    },
+    {
+      "scenario": "10_cone_chair",
+      "expected": "LEFT",
+      "actual": "STOP",
+      "confidence": 0.5,
+      "correct": false,
+      "model_latency_ms": 2478,
+      "backend_latency_ms": 2491
+    }
+  ],
+  "summary": {
+    "direct_accuracy": "2/10",
+    "backend_accuracy": "3/10",
+    "avg_latency_direct_s": 1.103,
+    "avg_confidence": 0.94,
+    "total_direct_time_s": 11.081
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DriverDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "confidence"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["FORWARD", "LEFT", "RIGHT", "STOP"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}

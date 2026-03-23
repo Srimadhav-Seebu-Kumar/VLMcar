@@ -50,9 +50,9 @@ class StructuredOutputParser:
         return ParsedDecision(
             action=action,
             confidence=float(payload["confidence"]),
-            reason_code=str(payload["reason_code"]),
-            scene_summary=str(payload["scene_summary"]),
-            hazards=[str(item) for item in payload["hazards"]],
+            reason_code=str(payload.get("reason_code", action.value)),
+            scene_summary=str(payload.get("scene_summary", "")),
+            hazards=[str(item) for item in payload.get("hazards", [])],
             raw_json=payload,
         )
 

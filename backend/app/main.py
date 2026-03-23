@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -49,14 +50,25 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     repo_root = Path(__file__).resolve().parents[2]
     prompts_dir = repo_root / "prompts"
     app.state.settings = app_settings
+
+    # Load structured output schema if a version-specific one exists
+    version = app_settings.prompt_version
+    versioned_schema_path = prompts_dir / f"json_schema_decision_{version}.json"
+    default_schema_path = prompts_dir / "json_schema_decision.json"
+    active_schema_path = versioned_schema_path if versioned_schema_path.exists() else default_schema_path
+    output_schema = json.loads(active_schema_path.read_text(encoding="utf-8"))
+    # Strip JSON Schema meta-fields that Ollama doesn't use for constrained generation
+    ollama_schema = {k: v for k, v in output_schema.items() if not k.startswith("$")}
+
     app.state.estop_active = False
     app.state.inference_adapter = OllamaNativeAdapter(
         base_url=app_settings.ollama_base_url,
         model=app_settings.ollama_model,
         timeout_s=app_settings.model_timeout_s,
+        output_schema=ollama_schema,
     )
     app.state.prompt_manager = PromptManager(prompts_dir=prompts_dir)
-    app.state.output_parser = StructuredOutputParser(schema_path=prompts_dir / "json_schema_decision.json")
+    app.state.output_parser = StructuredOutputParser(schema_path=active_schema_path)
     app.state.decision_policy = DecisionPolicy(
         min_confidence=app_settings.min_confidence,
         max_pulse_ms=app_settings.max_pulse_ms,

@@ -1,0 +1,33 @@
+{
+  "test_date": "2026-03-22",
+  "model": "llava:latest (7B Q4_0)",
+  "backend_v3_response": {
+    "trace_id": "6fb50d08-1499-4b1f-af0f-95d9cdbc731e",
+    "session_id": "1011ad5b-f1d8-4533-af1f-bb8ca5f6e53c",
+    "seq": 100,
+    "action": "STOP",
+    "left_pwm": 0,
+    "right_pwm": 0,
+    "duration_ms": 0,
+    "confidence": 0.5,
+    "reason_code": "LOW_CONFIDENCE",
+    "message": "model confidence below threshold",
+    "backend_latency_ms": 1939,
+    "model_latency_ms": 1928,
+    "safe_to_execute": false
+  },
+  "direct_ollama_v3": {
+    "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95} ",
+    "time_s": 0.818
+  },
+  "direct_ollama_v1": {
+    "raw_output": "{\n\"action\": \"STOP\",\n\"confidence\": 0.5,\n\"reason_code\": \"center_blocked\",\n\"scene_summary\": \"The image shows an indoor setting with a chair and a table. The rover is currently in the center of the room, and there appears to be a blockage directly ahead.\",\n\"hazards\": [\"center_blocked\"]\n}",
+    "time_s": 1.988
+  },
+  "timing": {
+    "backend_v3_roundtrip_s": 2.178,
+    "direct_v3_s": 0.818,
+    "direct_v1_s": 1.988,
+    "total_session_s": 4.985
+  }
+}

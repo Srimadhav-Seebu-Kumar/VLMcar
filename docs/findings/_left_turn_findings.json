@@ -1,0 +1,25 @@
+{
+  "backend_response": {
+    "trace_id": "f05a0669-6a89-4b61-b18c-3ba2bc6b828a",
+    "session_id": "8508eb5e-ffd6-41d3-9c67-101e50286245",
+    "seq": 10,
+    "action": "STOP",
+    "left_pwm": 0,
+    "right_pwm": 0,
+    "duration_ms": 0,
+    "confidence": 0.5,
+    "reason_code": "LOW_CONFIDENCE",
+    "message": "model confidence below threshold",
+    "backend_latency_ms": 7347,
+    "model_latency_ms": 7340,
+    "safe_to_execute": false
+  },
+  "raw_model_output": " In the image provided, I see a room with furniture including two chairs and a desk. There are two chairs in front of the desk; one is closer to the viewer and the other is further away. The desk appears to have a blue object on top that might be a vase or container.\n\nAs for obstacles, there's an item in the foreground that looks like a bottle which could potentially obstruct the path of the RC car if it were not to notice and stop. If this item is out of the way, there's a clear path straight forward towards the chairs, with no significant obstructions beyond the immediate area of the room.\n\nGiven these observations, your autonomous RC car should continue straight ahead (FORWARD) until it reaches the obstacle in the foreground. Once that is cleared, you can proceed to navigate around the chairs without any hindrance to the path. If there are no other obstacles or items not visible in this image, the car can then safely turn right and follow the path towards the rest of the room. Always remember to be cautious with your RC car as it navigates around furniture and objects to avoid collisions or damage. ",
+  "timing": {
+    "backend_roundtrip_s": 7.58,
+    "backend_latency_ms": 7347,
+    "model_latency_ms": 7340,
+    "direct_ollama_query_s": 4.945,
+    "total_session_s": 12.527
+  }
+}

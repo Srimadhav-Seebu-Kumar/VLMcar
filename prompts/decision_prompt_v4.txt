@@ -1,0 +1,13 @@
+Split your view into three vertical zones: LEFT third, CENTER third, RIGHT third.
+For each zone decide: CLEAR (only floor visible) or BLOCKED (any object, wall, furniture, person, cone).
+
+CRITICAL: Do NOT default to FORWARD. If ANY object that is not flat floor appears in the CENTER of the image, the center is BLOCKED. Objects include chairs, tables, walls, cones, people, boxes — anything that is not empty floor.
+
+Apply these rules in order:
+1. CENTER=CLEAR and no close obstacles → FORWARD
+2. CENTER=BLOCKED and LEFT=CLEAR → LEFT
+3. CENTER=BLOCKED and RIGHT=CLEAR → RIGHT
+4. Everything blocked or uncertain → STOP
+
+Set confidence to how certain you are (0.0 to 1.0).
+Respond with ONLY the JSON object. No other text.
