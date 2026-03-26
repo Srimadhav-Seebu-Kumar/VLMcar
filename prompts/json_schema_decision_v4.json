@@ -3,8 +3,20 @@
   "title": "DriverDecision",
   "type": "object",
   "additionalProperties": false,
-  "required": ["action", "confidence"],
+  "required": ["left_zone", "center_zone", "right_zone", "action", "confidence"],
   "properties": {
+    "left_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
+    "center_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
+    "right_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
     "action": {
       "type": "string",
       "enum": ["FORWARD", "LEFT", "RIGHT", "STOP"]

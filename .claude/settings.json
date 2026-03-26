@@ -4,7 +4,30 @@
       "Bash(/c/Users/seyan/Documents/Projcts/VLMcar/.venvVLM/Scripts/python.exe -m pip install -e \".[dev]\")",
       "Bash(/c/Users/seyan/Documents/Projcts/VLMcar/.venvVLM/Scripts/python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000)",
       "Bash(curl -s http://127.0.0.1:8000/health)",
-      "Bash(/c/Users/seyan/Documents/Projcts/VLMcar/.venvVLM/Scripts/python.exe -c \":*)"
+      "Bash(/c/Users/seyan/Documents/Projcts/VLMcar/.venvVLM/Scripts/python.exe -c \":*)",
+      "Bash(wc -l /c/Users/seyan/Documents/Projcts/VLMcar/backend/app/services/inference/*.py /c/Users/seyan/Documents/Projcts/VLMcar/simulator/*.py /c/Users/seyan/Documents/Projcts/VLMcar/backend/app/api/routes/*.py)",
+      "Bash(python -m pytest)",
+      "Bash(ollama --version)",
+      "Bash(ollama list:*)",
+      "Bash(python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000)",
+      "Bash(python tools/smoke_test_backend.py)",
+      "Bash(python -m simulator.cli webcam --no-stop-on-backend-stop --max-frames 3 --timeout-s 130)",
+      "Bash(python -m simulator.cli webcam --no-stop-on-backend-stop --max-frames 3 --timeout-s 130 --jpeg-quality 50)",
+      "Bash(python -m simulator.cli webcam --max-frames 5 --timeout-s 130)",
+      "Bash(python -m pytest -q)",
+      "Bash(taskkill //F //IM uvicorn.exe)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq uvicorn*\")",
+      "Bash(pkill -f \"uvicorn backend\")",
+      "Bash(netstat -ano)",
+      "Bash(tasklist)",
+      "Bash(taskkill //PID 4176 //F)",
+      "Bash(taskkill //PID 2472 //F)",
+      "Bash(python -m simulator.cli webcam --max-frames 8 --timeout-s 130)",
+      "Bash(python -c \":*)",
+      "Bash(python -m simulator.cli webcam --max-frames 20 --timeout-s 130)",
+      "Bash(taskkill //PID 24212 //F)",
+      "Bash(python -m simulator.cli webcam --max-frames 15 --timeout-s 130)",
+      "Bash(taskkill //PID 14560 //F)"
     ]
   }
 }

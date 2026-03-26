@@ -35,7 +35,7 @@ class OllamaNativeAdapter:
             "images": [base64.b64encode(request.image_bytes).decode("ascii")],
             "stream": False,
             "format": self._output_schema if self._output_schema else "json",
-            "options": {"temperature": 0},
+            "options": {"temperature": 0.3},
         }
 
         response_json = await self._post_generate(payload)

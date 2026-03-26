@@ -86,12 +86,12 @@ def parse_args() -> argparse.Namespace:
         "--frame-height", type=int, default=int(os.getenv("SIM_CAMERA_HEIGHT", "480"))
     )
     webcam_parser.add_argument(
-        "--jpeg-quality", type=int, default=int(os.getenv("SIM_JPEG_QUALITY", "80"))
+        "--jpeg-quality", type=int, default=int(os.getenv("SIM_JPEG_QUALITY", "50"))
     )
     webcam_parser.add_argument(
         "--max-frames",
         type=int,
-        default=int(os.getenv("SIM_CAMERA_MAX_FRAMES", "200")),
+        default=int(os.getenv("SIM_CAMERA_MAX_FRAMES", "10000")),
     )
     webcam_parser.add_argument(
         "--show-preview",
@@ -101,12 +101,12 @@ def parse_args() -> argparse.Namespace:
     webcam_parser.add_argument(
         "--stop-on-backend-stop",
         action=argparse.BooleanOptionalAction,
-        default=_env_bool("SIM_STOP_ON_BACKEND_STOP", True),
+        default=_env_bool("SIM_STOP_ON_BACKEND_STOP", False),
     )
     webcam_parser.add_argument(
         "--sleep-per-frame-s",
         type=float,
-        default=float(os.getenv("SIM_SLEEP_PER_FRAME_S", "0.0")),
+        default=float(os.getenv("SIM_SLEEP_PER_FRAME_S", "0.5")),
     )
 
     return parser.parse_args()
