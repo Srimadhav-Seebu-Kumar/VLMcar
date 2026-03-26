@@ -106,6 +106,11 @@ def run_webcam_loop(
         capture.set(cv2_mod.CAP_PROP_FRAME_WIDTH, float(config.frame_width))
         capture.set(cv2_mod.CAP_PROP_FRAME_HEIGHT, float(config.frame_height))
 
+    # Warmup: discard initial frames while camera auto-exposure settles
+    time.sleep(1)
+    for _ in range(5):
+        capture.read()
+
     resolved_session = session_id or uuid4()
     frames_processed = 0
     backend_errors = 0
@@ -150,10 +155,7 @@ def run_webcam_loop(
                 )
 
             frames_processed = seq
-            print(
-                f"seq={seq} action={command.action.value} reason={command.reason_code} "
-                f"trace_id={command.trace_id} session_id={command.session_id}"
-            )
+            print(command.model_dump_json())
 
             if config.show_preview and cv2_mod is not None:
                 _render_preview(cv2_mod=cv2_mod, frame=frame, command_action=command.action.value)

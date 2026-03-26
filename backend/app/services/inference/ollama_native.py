@@ -9,6 +9,7 @@ import httpx
 from backend.app.services.inference.base import InferenceError, InferenceRequest, InferenceResult
 
 
+
 class OllamaNativeAdapter:
     """Native Ollama `/api/generate` adapter for local vision inference."""
 
@@ -18,11 +19,13 @@ class OllamaNativeAdapter:
         model: str,
         timeout_s: int,
         http_client: httpx.AsyncClient | None = None,
+        output_schema: dict[str, Any] | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._model = model
         self._timeout_s = timeout_s
         self._http_client = http_client
+        self._output_schema = output_schema
 
     async def infer(self, request: InferenceRequest) -> InferenceResult:
         started = time.perf_counter()
@@ -31,8 +34,8 @@ class OllamaNativeAdapter:
             "prompt": request.prompt,
             "images": [base64.b64encode(request.image_bytes).decode("ascii")],
             "stream": False,
-            "format": "json",
-            "options": {"temperature": 0},
+            "format": self._output_schema if self._output_schema else "json",
+            "options": {"temperature": 0.3},
         }
 
         response_json = await self._post_generate(payload)

@@ -1,0 +1,105 @@
+{
+  "model": "llava",
+  "prompt_version": "v4",
+  "cv_enabled": true,
+  "accuracy": "5/10",
+  "accuracy_pct": 50.0,
+  "avg_latency_s": 19.889,
+  "action_distribution": {
+    "FORWARD": 3,
+    "LEFT": 5,
+    "STOP": 2
+  },
+  "results": [
+    {
+      "scenario": "01_clear_corridor",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 1.0,
+      "correct": true,
+      "latency_s": 1.931,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 1.0}"
+    },
+    {
+      "scenario": "02_dead_end",
+      "expected": "STOP",
+      "actual": "FORWARD",
+      "confidence": 1.0,
+      "correct": false,
+      "latency_s": 12.263,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 1.0}"
+    },
+    {
+      "scenario": "03_obstacle_right",
+      "expected": "LEFT",
+      "actual": "LEFT",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 26.498,
+      "raw_output": "{\"action\": \"LEFT\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "04_obstacle_left",
+      "expected": "RIGHT",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 27.378,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "05_narrow_passage",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 1.0,
+      "correct": true,
+      "latency_s": 35.311,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 1.0}"
+    },
+    {
+      "scenario": "06_center_block",
+      "expected": "LEFT",
+      "actual": "LEFT",
+      "confidence": 0.9,
+      "correct": true,
+      "latency_s": 25.935,
+      "raw_output": "{\"action\": \"LEFT\", \"confidence\": 0.9}"
+    },
+    {
+      "scenario": "07_person_ahead",
+      "expected": "STOP",
+      "actual": "LEFT",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 26.853,
+      "raw_output": "{\"action\": \"LEFT\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "08_cluttered_left",
+      "expected": "RIGHT",
+      "actual": "STOP",
+      "confidence": 1.0,
+      "correct": false,
+      "latency_s": 4.747,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 1.0}"
+    },
+    {
+      "scenario": "09_close_obstacle",
+      "expected": "STOP",
+      "actual": "LEFT",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 9.821,
+      "raw_output": "{\"action\": \"LEFT\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "10_cone_chair",
+      "expected": "LEFT",
+      "actual": "LEFT",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 28.158,
+      "raw_output": "{\"action\": \"LEFT\", \"confidence\": 0.95}"
+    }
+  ]
+}

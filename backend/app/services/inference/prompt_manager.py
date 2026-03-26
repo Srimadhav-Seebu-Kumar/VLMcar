@@ -20,13 +20,15 @@ class PromptManager:
 
     def __init__(self, prompts_dir: Path) -> None:
         self._prompts_dir = prompts_dir
-        self._system_prompt: str | None = None
+        self._system_prompts: dict[str, str] = {}
         self._decision_prompts: dict[str, str] = {}
 
-    def load_system_prompt(self) -> str:
-        if self._system_prompt is None:
-            self._system_prompt = self._read_file("system_prompt.txt")
-        return self._system_prompt
+    def load_system_prompt(self, version: str = "default") -> str:
+        if version not in self._system_prompts:
+            versioned = self._prompts_dir / f"system_prompt_{version}.txt"
+            filename = f"system_prompt_{version}.txt" if versioned.exists() else "system_prompt.txt"
+            self._system_prompts[version] = self._read_file(filename)
+        return self._system_prompts[version]
 
     def load_decision_prompt(self, version: str = "v1") -> str:
         if version not in self._decision_prompts:
@@ -36,7 +38,7 @@ class PromptManager:
     def build_prompt(self, frame: FrameRequest, prompt_version: str = "v1") -> PromptBundle:
         """Combine system and decision prompts with compact frame metadata context."""
 
-        system_prompt = self.load_system_prompt()
+        system_prompt = self.load_system_prompt(version=prompt_version)
         decision_prompt = self.load_decision_prompt(prompt_version)
         metadata = {
             "device_id": frame.device_id,

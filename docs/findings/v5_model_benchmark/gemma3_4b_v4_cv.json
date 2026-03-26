@@ -1,0 +1,104 @@
+{
+  "model": "gemma3:4b",
+  "prompt_version": "v4",
+  "cv_enabled": true,
+  "accuracy": "4/10",
+  "accuracy_pct": 40.0,
+  "avg_latency_s": 1.762,
+  "action_distribution": {
+    "FORWARD": 4,
+    "STOP": 6
+  },
+  "results": [
+    {
+      "scenario": "01_clear_corridor",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 1.9,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "02_dead_end",
+      "expected": "STOP",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.729,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "03_obstacle_right",
+      "expected": "LEFT",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.732,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "04_obstacle_left",
+      "expected": "RIGHT",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.7,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "05_narrow_passage",
+      "expected": "FORWARD",
+      "actual": "FORWARD",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 1.719,
+      "raw_output": "{\"action\": \"FORWARD\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "06_center_block",
+      "expected": "LEFT",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.715,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "07_person_ahead",
+      "expected": "STOP",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 1.868,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "08_cluttered_left",
+      "expected": "RIGHT",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.79,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "09_close_obstacle",
+      "expected": "STOP",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": true,
+      "latency_s": 1.748,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    },
+    {
+      "scenario": "10_cone_chair",
+      "expected": "LEFT",
+      "actual": "STOP",
+      "confidence": 0.95,
+      "correct": false,
+      "latency_s": 1.718,
+      "raw_output": "{\"action\": \"STOP\", \"confidence\": 0.95}"
+    }
+  ]
+}

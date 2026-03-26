@@ -37,6 +37,11 @@ class StructuredOutputParser:
     def parse(self, raw_output: str) -> ParsedDecision:
         payload = self._extract_json(raw_output)
 
+        # Normalize confidence from percentage (0-100) to fraction (0-1) if needed
+        if "confidence" in payload and isinstance(payload["confidence"], (int, float)):
+            if payload["confidence"] > 1:
+                payload["confidence"] = round(payload["confidence"] / 100, 2)
+
         try:
             validate(instance=payload, schema=self._schema)
         except ValidationError as exc:
@@ -50,9 +55,9 @@ class StructuredOutputParser:
         return ParsedDecision(
             action=action,
             confidence=float(payload["confidence"]),
-            reason_code=str(payload["reason_code"]),
-            scene_summary=str(payload["scene_summary"]),
-            hazards=[str(item) for item in payload["hazards"]],
+            reason_code=str(payload.get("reason_code", action.value)),
+            scene_summary=str(payload.get("scene_summary", "")),
+            hazards=[str(item) for item in payload.get("hazards", [])],
             raw_json=payload,
         )
 

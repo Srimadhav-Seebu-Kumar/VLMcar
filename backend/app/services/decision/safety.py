@@ -43,13 +43,13 @@ def apply_safety_overrides(
         return SafetyOutcome(
             action=Action.STOP,
             reason_code=decision.reason_code,
-            message=decision.scene_summary,
+            message=decision.scene_summary or "model chose STOP",
             safe_to_execute=True,
         )
 
     return SafetyOutcome(
         action=decision.action,
         reason_code=decision.reason_code,
-        message=decision.scene_summary,
+        message=decision.scene_summary or decision.action.value,
         safe_to_execute=True,
     )
