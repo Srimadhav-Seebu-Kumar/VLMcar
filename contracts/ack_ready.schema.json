@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlmcar.local/contracts/ack_ready.schema.json",
+  "title": "AckReady",
+  "description": "Bot acknowledgment sent after executing a command, signaling readiness for the next frame request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "device_id",
+    "session_id",
+    "seq",
+    "status"
+  ],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Sequence number of the command that was just executed"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["READY"],
+      "description": "Bot readiness status"
+    }
+  }
+}

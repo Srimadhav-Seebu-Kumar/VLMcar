@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.app.schemas.enums import Action, DeviceMode
+from backend.app.schemas.enums import DeviceMode
 
 
 class TelemetryPayload(BaseModel):
@@ -21,6 +21,7 @@ class TelemetryPayload(BaseModel):
     battery_mv: int = Field(ge=0)
     frame_counter: int = Field(ge=0)
     avg_loop_latency_ms: float = Field(ge=0)
-    last_action: Action | None = None
+    last_heading_deg: int | None = Field(default=None, ge=-90, le=90)
+    last_throttle: float | None = Field(default=None, ge=0.0, le=1.0)
     last_error: str | None = Field(default=None, max_length=256)
     mode: DeviceMode

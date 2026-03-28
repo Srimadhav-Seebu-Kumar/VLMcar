@@ -26,7 +26,8 @@ class ScenarioState:
 def build_command(
     seq: int,
     session_id: UUID | None,
-    action: str,
+    heading_deg: int,
+    throttle: float,
     left_pwm: int,
     right_pwm: int,
     duration_ms: int,
@@ -37,7 +38,8 @@ def build_command(
         "trace_id": str(uuid4()),
         "session_id": str(resolved_session),
         "seq": seq,
-        "action": action,
+        "heading_deg": heading_deg,
+        "throttle": throttle,
         "left_pwm": left_pwm,
         "right_pwm": right_pwm,
         "duration_ms": duration_ms,
@@ -58,6 +60,14 @@ def create_mock_app(config: MockBackendConfig) -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok", "scenario": config.scenario}
 
+    @app.post("/api/v1/control/ack")
+    async def control_ack(payload: dict[str, object]) -> dict[str, object]:
+        return {
+            "status": "ok",
+            "request_frame": True,
+            "session_id": payload.get("session_id", str(uuid4())),
+        }
+
     @app.post("/api/v1/control/frame")
     async def control_frame(
         image: Annotated[UploadFile, File(...)],
@@ -77,18 +87,18 @@ def create_mock_app(config: MockBackendConfig) -> FastAPI:
             await asyncio.sleep(config.timeout_seconds)
 
         if config.scenario == "always_stop":
-            return build_command(seq, session_id, "STOP", 0, 0, 0, "MOCK_ALWAYS_STOP")
+            return build_command(seq, session_id, 0, 0.0, 0, 0, 0, "MOCK_ALWAYS_STOP")
 
         if config.scenario == "always_forward":
-            return build_command(seq, session_id, "FORWARD", 120, 120, 220, "MOCK_ALWAYS_FORWARD")
+            return build_command(seq, session_id, 0, 0.8, 120, 120, 220, "MOCK_ALWAYS_FORWARD")
 
         if config.scenario == "alternating_turns":
             state.turn_counter += 1
             if state.turn_counter % 2 == 1:
-                return build_command(seq, session_id, "LEFT", 85, 125, 200, "MOCK_TURN_LEFT")
-            return build_command(seq, session_id, "RIGHT", 125, 85, 200, "MOCK_TURN_RIGHT")
+                return build_command(seq, session_id, -45, 0.5, 85, 125, 200, "MOCK_TURN_LEFT")
+            return build_command(seq, session_id, 45, 0.5, 125, 85, 200, "MOCK_TURN_RIGHT")
 
-        return build_command(seq, session_id, "STOP", 0, 0, 0, "MOCK_DEFAULT_STOP")
+        return build_command(seq, session_id, 0, 0.0, 0, 0, 0, "MOCK_DEFAULT_STOP")
 
     return app
 

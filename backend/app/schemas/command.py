@@ -4,18 +4,22 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.app.schemas.enums import Action
-
 
 class CommandResponse(BaseModel):
-    """Action command returned to firmware for next motion pulse."""
+    """Action command returned to firmware for next motion pulse.
+
+    Uses continuous heading + throttle instead of discrete actions:
+    - heading_deg: steering angle from -90 (full left) to +90 (full right), 0 = straight
+    - throttle: speed from 0.0 (stop) to 1.0 (full speed)
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     trace_id: UUID
     session_id: UUID
     seq: int = Field(ge=0)
-    action: Action
+    heading_deg: int = Field(ge=-90, le=90)
+    throttle: float = Field(ge=0.0, le=1.0)
     left_pwm: int = Field(ge=0, le=255)
     right_pwm: int = Field(ge=0, le=255)
     duration_ms: int = Field(ge=0, le=500)

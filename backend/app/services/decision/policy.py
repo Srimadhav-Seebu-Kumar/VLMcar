@@ -44,13 +44,14 @@ class DecisionPolicy:
             min_confidence=self._min_confidence,
             estop_active=estop_active,
         )
-        pulse = self._smoother.shape(safety.action, decision.confidence)
+        pulse = self._smoother.shape(safety.heading_deg, safety.throttle, decision.confidence)
 
         return CommandResponse(
             trace_id=trace_id,
             session_id=session_id,
             seq=seq,
-            action=safety.action,
+            heading_deg=safety.heading_deg,
+            throttle=safety.throttle,
             left_pwm=pulse.left_pwm,
             right_pwm=pulse.right_pwm,
             duration_ms=pulse.duration_ms,

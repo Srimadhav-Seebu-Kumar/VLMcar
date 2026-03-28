@@ -8,8 +8,6 @@ from typing import Any
 
 from jsonschema import ValidationError, validate
 
-from backend.app.schemas.enums import Action
-
 
 class ParseError(RuntimeError):
     """Raised when model output cannot be parsed into safe structured decision."""
@@ -17,9 +15,13 @@ class ParseError(RuntimeError):
 
 @dataclass(frozen=True)
 class ParsedDecision:
-    """Structured model decision after schema validation."""
+    """Structured model decision after schema validation.
 
-    action: Action
+    Uses continuous heading + throttle instead of discrete actions.
+    """
+
+    heading_deg: int
+    throttle: float
     confidence: float
     reason_code: str
     scene_summary: str
@@ -42,20 +44,28 @@ class StructuredOutputParser:
             if payload["confidence"] > 1:
                 payload["confidence"] = round(payload["confidence"] / 100, 2)
 
+        # Normalize throttle from percentage (0-100) to fraction (0-1) if needed
+        if "throttle" in payload and isinstance(payload["throttle"], (int, float)):
+            if payload["throttle"] > 1:
+                payload["throttle"] = round(payload["throttle"] / 100, 2)
+
         try:
             validate(instance=payload, schema=self._schema)
         except ValidationError as exc:
             raise ParseError(f"model output failed schema validation: {exc.message}") from exc
 
-        try:
-            action = Action(payload["action"])
-        except ValueError as exc:
-            raise ParseError(f"invalid action value: {payload.get('action')}") from exc
+        heading_deg = int(payload.get("heading_deg", 0))
+        throttle = float(payload.get("throttle", 0.0))
+
+        # Clamp values to safe ranges
+        heading_deg = max(-90, min(90, heading_deg))
+        throttle = max(0.0, min(1.0, throttle))
 
         return ParsedDecision(
-            action=action,
+            heading_deg=heading_deg,
+            throttle=throttle,
             confidence=float(payload["confidence"]),
-            reason_code=str(payload.get("reason_code", action.value)),
+            reason_code=str(payload.get("reason_code", "MODEL_DECISION")),
             scene_summary=str(payload.get("scene_summary", "")),
             hazards=[str(item) for item in payload.get("hazards", [])],
             raw_json=payload,

@@ -16,8 +16,9 @@ from backend.app.api.deps import (
     get_prompt_manager,
 )
 from backend.app.core.config import AppSettings
+from backend.app.schemas.ack import AckRequest, AckResponse
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action, DeviceMode, SessionStatus
+from backend.app.schemas.enums import DeviceMode, SessionStatus
 from backend.app.schemas.frame import FrameRequest, GpsData
 from backend.app.schemas.session import SessionMetadata
 from backend.app.schemas.telemetry import TelemetryPayload
@@ -57,13 +58,14 @@ def build_stop_command(
     model_latency_ms: int,
     safe_to_execute: bool,
 ) -> CommandResponse:
-    """Build a deterministic STOP command payload for safety fallback paths."""
+    """Build a deterministic stop command (throttle=0) for safety fallback paths."""
 
     return CommandResponse(
         trace_id=trace_id,
         session_id=session_id,
         seq=seq,
-        action=Action.STOP,
+        heading_deg=0,
+        throttle=0.0,
         left_pwm=0,
         right_pwm=0,
         duration_ms=0,
@@ -104,6 +106,48 @@ def _ensure_session(
         logger.warning("session_create_failed", extra={"session_id": str(session_id)})
 
 
+@router.post("/ack", response_model=AckResponse)
+async def acknowledge_ready(
+    request: Request,
+    payload: AckRequest,
+) -> AckResponse:
+    """Receive bot acknowledgment that a command was executed.
+
+    The bot calls this endpoint after executing each command to signal
+    readiness for the next frame request. The backend responds with
+    whether the bot should send a new frame.
+
+    Input (JSON):
+        device_id   - bot identifier (required)
+        session_id  - session UUID (required)
+        seq         - sequence of the command just executed (required)
+        status      - must be "READY" (required)
+
+    Output (JSON):
+        status        - "ok" on success
+        request_frame - true if bot should capture and send next frame
+        session_id    - echoed session UUID
+    """
+
+    estop_active: bool = getattr(request.app.state, "estop_active", False)
+
+    logger.info(
+        "bot_ack_ready",
+        extra={
+            "device_id": payload.device_id,
+            "session_id": str(payload.session_id),
+            "seq": payload.seq,
+            "estop_active": estop_active,
+        },
+    )
+
+    return AckResponse(
+        status="ok",
+        request_frame=not estop_active,
+        session_id=payload.session_id,
+    )
+
+
 @router.post("/frame", response_model=CommandResponse)
 async def ingest_frame(
     request: Request,
@@ -128,7 +172,9 @@ async def ingest_frame(
     gps_lat: float | None = Form(default=None),
     gps_lon: float | None = Form(default=None),
 ) -> CommandResponse:
-    """Receive all bot telemetry and frame data, return a predetermined action command.
+    """Receive frame from bot and return a continuous heading + throttle command.
+
+    The bot should only call this after receiving request_frame=true from /ack.
 
     Input (multipart/form-data):
         image          - JPEG frame from bot camera (required)
@@ -148,7 +194,8 @@ async def ingest_frame(
         gps_lon        - GPS longitude -180 to 180 (optional)
 
     Output (JSON):
-        action         - one of: FORWARD, LEFT, RIGHT, STOP
+        heading_deg    - steering angle: -90 full left, 0 straight, +90 full right
+        throttle       - speed: 0.0 stop, 1.0 full speed
         left_pwm       - left motor PWM 0-255
         right_pwm      - right motor PWM 0-255
         duration_ms    - pulse duration 0-500ms
@@ -338,7 +385,8 @@ async def ingest_frame(
             extra={
                 "trace_id": str(trace_id),
                 "session_id": str(resolved_session_id),
-                "action": command.action.value,
+                "heading_deg": command.heading_deg,
+                "throttle": command.throttle,
             },
         )
 
@@ -350,7 +398,8 @@ async def ingest_frame(
             "device_id": metadata.device_id,
             "route": "/api/v1/control/frame",
             "reason_code": command.reason_code,
-            "action": command.action.value,
+            "heading_deg": command.heading_deg,
+            "throttle": command.throttle,
             "model_latency_ms": command.model_latency_ms,
             "prompt_version": settings.prompt_version,
         },
@@ -364,26 +413,7 @@ def ingest_telemetry(
     settings: Annotated[AppSettings, Depends(get_app_settings)],
     payload: TelemetryPayload,
 ) -> dict[str, object]:
-    """Receive periodic telemetry from the bot and persist for monitoring.
-
-    Input (JSON):
-        device_id         - bot identifier (required)
-        session_id        - session UUID (optional)
-        timestamp_ms      - telemetry timestamp (required)
-        uptime_ms         - firmware uptime (required)
-        free_heap_bytes   - available heap memory (required)
-        wifi_rssi_dbm     - WiFi signal strength (required)
-        battery_mv        - battery voltage in millivolts (required)
-        frame_counter     - frames processed since boot (required)
-        avg_loop_latency_ms - average loop cycle time (required)
-        last_action       - most recent action executed (optional)
-        last_error        - most recent error message (optional)
-        mode              - current device mode: AUTO|MANUAL|ESTOP|IDLE (required)
-
-    Output (JSON):
-        status            - "ok" on success
-        device_id         - echoed back for confirmation
-    """
+    """Receive periodic telemetry from the bot and persist for monitoring."""
 
     try:
         with session_scope(settings.database_url) as db:

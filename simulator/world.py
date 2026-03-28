@@ -6,7 +6,6 @@ from typing import Final
 
 from PIL import Image, ImageDraw
 
-from backend.app.schemas.enums import Action
 from simulator.maps import MapDefinition
 
 _WALL_CHARS: Final[frozenset[str]] = frozenset({"#"})
@@ -31,7 +30,6 @@ class KinematicsConfig:
     """Motion model for pulse-based simulator control."""
 
     forward_speed_cells_per_s: float = 2.2
-    turn_speed_cells_per_s: float = 1.3
     turn_rate_deg_per_s: float = 95.0
 
 
@@ -106,21 +104,23 @@ class GridWorld:
         dy = state.y - self._goal_xy[1]
         return math.hypot(dx, dy) <= tolerance_cells
 
-    def apply_command(self, state: VehicleState, action: Action, duration_ms: int) -> VehicleState:
+    def apply_command(
+        self, state: VehicleState, heading_deg: int, throttle: float, duration_ms: int
+    ) -> VehicleState:
+        """Apply continuous heading + throttle command to vehicle state."""
+
         duration_s = max(0.0, min(float(duration_ms), 1000.0)) / 1000.0
-        if action is Action.STOP or duration_s <= 0.0:
+        if throttle <= 0.0 or duration_s <= 0.0:
             return VehicleState(x=state.x, y=state.y, heading_rad=state.heading_rad, collided=False)
 
-        next_heading = state.heading_rad
-        if action is Action.LEFT:
-            next_heading -= math.radians(self._kinematics.turn_rate_deg_per_s) * duration_s
-        elif action is Action.RIGHT:
-            next_heading += math.radians(self._kinematics.turn_rate_deg_per_s) * duration_s
+        # Apply heading as turn rate
+        clamped_heading = max(-90, min(90, heading_deg))
+        turn_fraction = clamped_heading / 90.0
+        heading_change = math.radians(self._kinematics.turn_rate_deg_per_s) * turn_fraction * duration_s
+        next_heading = state.heading_rad + heading_change
 
-        speed = self._kinematics.forward_speed_cells_per_s
-        if action in {Action.LEFT, Action.RIGHT}:
-            speed = self._kinematics.turn_speed_cells_per_s
-
+        # Speed scaled by throttle
+        speed = self._kinematics.forward_speed_cells_per_s * throttle
         travel = speed * duration_s
         next_x = state.x + math.cos(next_heading) * travel
         next_y = state.y + math.sin(next_heading) * travel

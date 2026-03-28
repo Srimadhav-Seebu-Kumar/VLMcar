@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import uuid4
 
 from backend.app.schemas import (
-    Action,
     CommandResponse,
     DeviceMode,
     FrameRequest,
@@ -43,7 +42,7 @@ def test_session_frame_and_decision_linking(tmp_path: Path) -> None:
             SessionMetadata(
                 session_id=session_id,
                 device_id="rc-car-01",
-                prompt_version="v1",
+                prompt_version="v5",
                 model_name="llava",
                 operator_notes="integration-test",
                 started_at_ms=1710000000000,
@@ -74,7 +73,8 @@ def test_session_frame_and_decision_linking(tmp_path: Path) -> None:
                 trace_id=uuid4(),
                 session_id=session_id,
                 seq=10,
-                action=Action.STOP,
+                heading_deg=0,
+                throttle=0.0,
                 left_pwm=0,
                 right_pwm=0,
                 duration_ms=0,
@@ -121,7 +121,8 @@ def test_telemetry_and_error_repositories_persist_records(tmp_path: Path) -> Non
                 battery_mv=7350,
                 frame_counter=30,
                 avg_loop_latency_ms=260.4,
-                last_action=Action.STOP,
+                last_heading_deg=0,
+                last_throttle=0.0,
                 last_error=None,
                 mode=DeviceMode.AUTO,
             )

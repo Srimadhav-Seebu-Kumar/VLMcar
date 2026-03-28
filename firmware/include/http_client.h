@@ -8,3 +8,9 @@ bool http_client_send_frame(
     const FrameMetadata& metadata,
     MotionCommand& out_command,
     String& out_error);
+bool http_client_send_ack(
+    const String& device_id,
+    const String& session_id,
+    uint32_t seq,
+    AckReadyResponse& out_response,
+    String& out_error);

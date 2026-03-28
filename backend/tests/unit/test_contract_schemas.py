@@ -38,7 +38,8 @@ CONTRACTS_DIR = REPO_ROOT / "contracts"
                 "trace_id": str(uuid4()),
                 "session_id": str(uuid4()),
                 "seq": 1,
-                "action": "STOP",
+                "heading_deg": 0,
+                "throttle": 0.0,
                 "left_pwm": 0,
                 "right_pwm": 0,
                 "duration_ms": 0,
@@ -62,7 +63,8 @@ CONTRACTS_DIR = REPO_ROOT / "contracts"
                 "battery_mv": 7380,
                 "frame_counter": 17,
                 "avg_loop_latency_ms": 250.5,
-                "last_action": "FORWARD",
+                "last_heading_deg": 0,
+                "last_throttle": 0.8,
                 "last_error": None,
                 "mode": "AUTO",
             },
@@ -72,7 +74,7 @@ CONTRACTS_DIR = REPO_ROOT / "contracts"
             {
                 "session_id": str(uuid4()),
                 "device_id": "rc-car-01",
-                "prompt_version": "v1",
+                "prompt_version": "v5",
                 "model_name": "llava",
                 "operator_notes": "lab run",
                 "started_at_ms": 1710000000000,
@@ -87,19 +89,20 @@ def test_schema_accepts_valid_payload(schema_name: str, payload: dict[str, objec
     validate(instance=payload, schema=schema)
 
 
-def test_command_schema_rejects_invalid_action_enum() -> None:
+def test_command_schema_rejects_out_of_range_heading() -> None:
     schema = json.loads((CONTRACTS_DIR / "command_response.schema.json").read_text(encoding="utf-8"))
     payload = {
         "trace_id": str(uuid4()),
         "session_id": str(uuid4()),
         "seq": 2,
-        "action": "REVERSE",
+        "heading_deg": -100,
+        "throttle": 0.5,
         "left_pwm": 0,
         "right_pwm": 0,
         "duration_ms": 0,
         "confidence": 0.5,
-        "reason_code": "INVALID_ACTION",
-        "message": "bad action",
+        "reason_code": "INVALID_HEADING",
+        "message": "bad heading",
         "backend_latency_ms": 20,
         "model_latency_ms": 10,
         "safe_to_execute": False,

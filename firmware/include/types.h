@@ -2,13 +2,6 @@
 
 #include <Arduino.h>
 
-enum class DriveAction : uint8_t {
-  FORWARD,
-  LEFT,
-  RIGHT,
-  STOP,
-};
-
 enum class DeviceMode : uint8_t {
   AUTO,
   MANUAL,
@@ -21,6 +14,7 @@ enum class FirmwareState : uint8_t {
   WIFI_CONNECTING,
   BACKEND_WAIT,
   IDLE,
+  ACK_READY,
   CAPTURE,
   UPLOAD,
   EXECUTE,
@@ -47,7 +41,8 @@ struct FrameMetadata {
 };
 
 struct MotionCommand {
-  DriveAction action = DriveAction::STOP;
+  int8_t heading_deg = 0;       // -90 (full left) to +90 (full right), 0 = straight
+  float throttle = 0.0f;        // 0.0 (stop) to 1.0 (full speed)
   uint8_t left_pwm = 0;
   uint8_t right_pwm = 0;
   uint16_t duration_ms = 0;
@@ -58,6 +53,11 @@ struct MotionCommand {
   String session_id;
   uint32_t issued_at_ms = 0;
   uint32_t lease_ms = 0;
+};
+
+struct AckReadyResponse {
+  bool request_frame = false;
+  String session_id;
 };
 
 struct TelemetrySnapshot {

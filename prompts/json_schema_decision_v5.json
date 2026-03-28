@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DriverDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["left_zone", "center_zone", "right_zone", "heading_deg", "throttle", "confidence"],
+  "properties": {
+    "left_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
+    "center_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
+    "right_zone": {
+      "type": "string",
+      "enum": ["CLEAR", "BLOCKED"]
+    },
+    "heading_deg": {
+      "type": "integer",
+      "minimum": -90,
+      "maximum": 90,
+      "description": "Steering angle: -90 full left, 0 straight, +90 full right"
+    },
+    "throttle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Speed: 0.0 stop, 1.0 full speed"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  }
+}

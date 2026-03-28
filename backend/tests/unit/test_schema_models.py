@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from backend.app.schemas import Action, CommandResponse, DeviceMode, FrameRequest
+from backend.app.schemas import CommandResponse, DeviceMode, FrameRequest
 
 
 def test_pydantic_frame_request_accepts_valid_mode() -> None:
@@ -23,14 +23,15 @@ def test_pydantic_frame_request_accepts_valid_mode() -> None:
     assert frame.mode is DeviceMode.AUTO
 
 
-def test_pydantic_command_rejects_invalid_action() -> None:
+def test_pydantic_command_rejects_invalid_heading() -> None:
     with pytest.raises(ValidationError):
         CommandResponse.model_validate(
             {
                 "trace_id": str(uuid4()),
                 "session_id": str(uuid4()),
                 "seq": 1,
-                "action": "REVERSE",
+                "heading_deg": -100,
+                "throttle": 0.5,
                 "left_pwm": 0,
                 "right_pwm": 0,
                 "duration_ms": 0,
@@ -44,12 +45,13 @@ def test_pydantic_command_rejects_invalid_action() -> None:
         )
 
 
-def test_pydantic_command_accepts_enum_action() -> None:
+def test_pydantic_command_accepts_valid_heading_throttle() -> None:
     response = CommandResponse(
         trace_id=uuid4(),
         session_id=uuid4(),
         seq=2,
-        action=Action.STOP,
+        heading_deg=0,
+        throttle=0.0,
         left_pwm=0,
         right_pwm=0,
         duration_ms=0,
@@ -60,4 +62,5 @@ def test_pydantic_command_accepts_enum_action() -> None:
         model_latency_ms=3,
         safe_to_execute=True,
     )
-    assert response.action is Action.STOP
+    assert response.heading_deg == 0
+    assert response.throttle == 0.0

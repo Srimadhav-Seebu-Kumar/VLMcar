@@ -14,6 +14,7 @@ class FirmwareStateMachine {
 
  private:
   void transition_to(FirmwareState next, const char* reason);
+  bool send_ack_ready();
   bool capture_frame();
   bool upload_frame_for_command();
   bool execute_pending_command();
@@ -24,5 +25,6 @@ class FirmwareStateMachine {
   FrameBuffer frame_;
   FrameMetadata frame_metadata_;
   MotionCommand pending_command_;
+  AckReadyResponse ack_response_;
   String last_error_;
 };
