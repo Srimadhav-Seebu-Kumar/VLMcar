@@ -7,7 +7,7 @@ from typing import Protocol
 from uuid import UUID
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action, DeviceMode
+from backend.app.schemas.enums import DeviceMode
 from simulator.control_client import BackendControlError, ControlFrameRequest
 from simulator.fallback import build_stop_command
 
@@ -64,7 +64,9 @@ def replay_episode(
     with config.output_jsonl_path.open("w", encoding="utf-8") as output_file:
         for step in steps:
             written += 1
-            expected_action = str(step["action"])
+            # Compare heading_deg (new format) or fall back to action (old format)
+            expected_heading = step.get("heading_deg", 0)
+            expected_throttle = step.get("throttle", 0.0)
             seq = _read_int(step.get("seq"), default=written)
             session_id = UUID(str(step["session_id"]))
             frame_path = Path(str(step["frame_path"]))
@@ -99,14 +101,19 @@ def replay_episode(
                     safe_to_execute=False,
                 )
 
-            action_match = command.action.value == expected_action
+            # Match on heading direction and throttle state
+            heading_match = command.heading_deg == expected_heading
+            throttle_match = (command.throttle > 0) == (expected_throttle > 0)
+            action_match = heading_match and throttle_match
             if action_match:
                 matched += 1
 
             output_record = {
                 "seq": seq,
-                "expected_action": expected_action,
-                "actual_action": command.action.value,
+                "expected_heading_deg": expected_heading,
+                "expected_throttle": expected_throttle,
+                "actual_heading_deg": command.heading_deg,
+                "actual_throttle": command.throttle,
                 "action_match": action_match,
                 "trace_id": str(command.trace_id),
                 "session_id": str(command.session_id),
@@ -115,7 +122,7 @@ def replay_episode(
             }
             output_file.write(json.dumps(output_record) + "\n")
 
-            if command.action is Action.STOP and config.stop_on_backend_stop:
+            if command.throttle <= 0.0 and config.stop_on_backend_stop:
                 break
 
     return ReplayResult(

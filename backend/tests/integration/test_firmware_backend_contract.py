@@ -18,7 +18,7 @@ class ForwardAdapter:
     async def infer(self, request: InferenceRequest) -> InferenceResult:
         _ = request
         return InferenceResult(
-            raw_output='{"action":"FORWARD","confidence":0.93,"reason_code":"PATH_CLEAR","scene_summary":"clear corridor","hazards":[]}',
+            raw_output='{"left_zone":"CLEAR","center_zone":"CLEAR","right_zone":"CLEAR","heading_deg":0,"throttle":0.8,"confidence":0.93}',
             model_latency_ms=22,
             provider_payload={"provider": "integration-stub"},
         )
@@ -42,6 +42,7 @@ def test_backend_response_matches_firmware_contract(tmp_path: Path) -> None:
         log_level="INFO",
         database_url=f"sqlite:///{tmp_path / 'integration_contract.db'}",
         artifacts_dir=tmp_path / "artifacts",
+        prompt_version="v5",
         quality_min_score=0.0,
         quality_min_blur_score=0.0,
     )
@@ -68,7 +69,8 @@ def test_backend_response_matches_firmware_contract(tmp_path: Path) -> None:
     payload = response.json()
     validate(instance=payload, schema=command_schema())
 
-    assert payload["action"] == "FORWARD"
+    assert payload["heading_deg"] == 0
+    assert payload["throttle"] > 0
     UUID(payload["trace_id"])
     UUID(payload["session_id"])
     assert payload["duration_ms"] <= settings.max_pulse_ms

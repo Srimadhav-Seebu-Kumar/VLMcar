@@ -3,7 +3,6 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action
 
 
 def build_stop_command(
@@ -14,13 +13,14 @@ def build_stop_command(
     message: str,
     safe_to_execute: bool,
 ) -> CommandResponse:
-    """Build a local STOP fallback command for simulator-side failures."""
+    """Build a local stop fallback command (throttle=0) for simulator-side failures."""
 
     return CommandResponse(
         trace_id=uuid4(),
         session_id=session_id,
         seq=seq,
-        action=Action.STOP,
+        heading_deg=0,
+        throttle=0.0,
         left_pwm=0,
         right_pwm=0,
         duration_ms=0,

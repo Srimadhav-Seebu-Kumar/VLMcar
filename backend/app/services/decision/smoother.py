@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from backend.app.schemas.enums import Action
-
 
 @dataclass(frozen=True)
 class PulseShape:
@@ -21,7 +19,13 @@ def clamp_pwm(value: int) -> int:
 
 
 class PulseSmoother:
-    """Convert high-level action and confidence into short safe pulses."""
+    """Convert continuous heading + throttle into short safe motor pulses.
+
+    Differential steering model:
+    - heading_deg=0 → equal PWM on both motors (straight)
+    - heading_deg>0 → left motor faster (turn right)
+    - heading_deg<0 → right motor faster (turn left)
+    """
 
     def __init__(
         self,
@@ -35,27 +39,25 @@ class PulseSmoother:
         self._forward_pwm_base = forward_pwm_base
         self._turn_pwm_base = turn_pwm_base
 
-    def shape(self, action: Action, confidence: float) -> PulseShape:
-        if action is Action.STOP:
+    def shape(self, heading_deg: int, throttle: float, confidence: float) -> PulseShape:
+        if throttle <= 0.0:
             return PulseShape(left_pwm=0, right_pwm=0, duration_ms=0)
 
+        bounded_throttle = max(0.0, min(1.0, throttle))
         bounded_confidence = max(0.0, min(1.0, confidence))
+
+        # Duration from confidence
         pulse_span = max(self._max_pulse_ms - self._min_pulse_ms, 0)
         duration_ms = self._min_pulse_ms + int(pulse_span * bounded_confidence)
 
-        if action is Action.FORWARD:
-            pwm = clamp_pwm(self._forward_pwm_base + int(20 * bounded_confidence))
-            return PulseShape(left_pwm=pwm, right_pwm=pwm, duration_ms=duration_ms)
+        # Base PWM scaled by throttle
+        base_pwm = self._forward_pwm_base * bounded_throttle
 
-        if action is Action.LEFT:
-            return PulseShape(
-                left_pwm=clamp_pwm(self._turn_pwm_base - 25),
-                right_pwm=clamp_pwm(self._turn_pwm_base + 20),
-                duration_ms=duration_ms,
-            )
+        # Differential steering from heading
+        clamped_heading = max(-90, min(90, heading_deg))
+        turn_ratio = clamped_heading / 90.0
 
-        return PulseShape(
-            left_pwm=clamp_pwm(self._turn_pwm_base + 20),
-            right_pwm=clamp_pwm(self._turn_pwm_base - 25),
-            duration_ms=duration_ms,
-        )
+        left_pwm = clamp_pwm(int(base_pwm * (1.0 + turn_ratio)))
+        right_pwm = clamp_pwm(int(base_pwm * (1.0 - turn_ratio)))
+
+        return PulseShape(left_pwm=left_pwm, right_pwm=right_pwm, duration_ms=duration_ms)

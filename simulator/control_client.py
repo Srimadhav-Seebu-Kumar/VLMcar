@@ -48,6 +48,8 @@ class BackendControlClient:
         self._owns_client = http_client is None
         self._http_client = http_client or httpx.Client(timeout=timeout_s, headers=headers)
         self._frame_url = frame_url
+        # Derive ack URL from frame URL
+        self._ack_url = frame_url.rsplit("/frame", 1)[0] + "/ack"
 
     def close(self) -> None:
         if self._owns_client:
@@ -59,6 +61,26 @@ class BackendControlClient:
     def __exit__(self, exc_type: object, exc: object, exc_tb: object) -> None:
         _ = (exc_type, exc, exc_tb)
         self.close()
+
+    def send_ack(self, device_id: str, session_id: UUID, seq: int) -> bool:
+        """Send readiness acknowledgment. Returns True if backend requests a frame."""
+
+        payload = {
+            "device_id": device_id,
+            "session_id": str(session_id),
+            "seq": seq,
+            "status": "READY",
+        }
+        try:
+            response = self._http_client.post(self._ack_url, json=payload)
+        except httpx.HTTPError as exc:
+            raise BackendControlError(f"ack request failed: {exc}") from exc
+
+        if response.status_code != 200:
+            raise BackendControlError(f"ack status={response.status_code}")
+
+        body = response.json()
+        return bool(body.get("request_frame", True))
 
     def send_frame(self, frame: ControlFrameRequest) -> CommandResponse:
         data: dict[str, str] = {

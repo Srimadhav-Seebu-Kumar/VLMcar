@@ -41,14 +41,16 @@ def test_mock_backend_always_stop_scenario() -> None:
     app = create_mock_app(MockBackendConfig(scenario="always_stop"))
     with TestClient(app) as client:
         payload = post_frame(client)
-    assert payload["action"] == "STOP"
+    assert payload["throttle"] == 0.0
+    assert payload["heading_deg"] == 0
 
 
 def test_mock_backend_always_forward_scenario() -> None:
     app = create_mock_app(MockBackendConfig(scenario="always_forward"))
     with TestClient(app) as client:
         payload = post_frame(client)
-    assert payload["action"] == "FORWARD"
+    assert payload["throttle"] == 0.8
+    assert payload["heading_deg"] == 0
 
 
 def test_mock_backend_alternating_turn_scenario() -> None:
@@ -56,8 +58,8 @@ def test_mock_backend_alternating_turn_scenario() -> None:
     with TestClient(app) as client:
         first = post_frame(client, seq=1)
         second = post_frame(client, seq=2)
-    assert first["action"] == "LEFT"
-    assert second["action"] == "RIGHT"
+    assert first["heading_deg"] == -45
+    assert second["heading_deg"] == 45
 
 
 def test_mock_backend_timeout_scenario_delays_response() -> None:
@@ -67,5 +69,5 @@ def test_mock_backend_timeout_scenario_delays_response() -> None:
         payload = post_frame(client)
         elapsed = time.perf_counter() - start
 
-    assert payload["action"] == "STOP"
+    assert payload["throttle"] == 0.0
     assert elapsed >= 0.05

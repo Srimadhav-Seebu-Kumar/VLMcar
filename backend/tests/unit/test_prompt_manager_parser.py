@@ -41,31 +41,33 @@ def test_prompt_manager_raises_for_missing_prompt_file(tmp_path: Path) -> None:
         manager.load_decision_prompt("v9")
 
 
-def test_structured_parser_parses_valid_json() -> None:
-    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision.json")
+def test_structured_parser_parses_valid_json_v5() -> None:
+    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision_v5.json")
     parsed = parser.parse(
-        '{"action":"STOP","confidence":0.91,"reason_code":"UNCERTAIN","scene_summary":"narrow path","hazards":["chair"]}'
+        '{"left_zone":"CLEAR","center_zone":"CLEAR","right_zone":"BLOCKED","heading_deg":0,"throttle":0.8,"confidence":0.91}'
     )
 
-    assert parsed.action.value == "STOP"
-    assert parsed.reason_code == "UNCERTAIN"
+    assert parsed.heading_deg == 0
+    assert parsed.throttle == 0.8
+    assert parsed.confidence == 0.91
 
 
-def test_structured_parser_handles_markdown_wrapped_json() -> None:
-    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision.json")
+def test_structured_parser_handles_markdown_wrapped_json_v5() -> None:
+    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision_v5.json")
     parsed = parser.parse(
         """```json
-{"action":"LEFT","confidence":0.6,"reason_code":"LEFT_CLEARER","scene_summary":"left side open","hazards":[]}
+{"left_zone":"CLEAR","center_zone":"BLOCKED","right_zone":"CLEAR","heading_deg":-45,"throttle":0.5,"confidence":0.6}
 ```"""
     )
 
-    assert parsed.action.value == "LEFT"
+    assert parsed.heading_deg == -45
+    assert parsed.throttle == 0.5
 
 
-def test_structured_parser_rejects_invalid_action() -> None:
-    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision.json")
+def test_structured_parser_rejects_invalid_heading_v5() -> None:
+    parser = StructuredOutputParser(schema_path=prompts_dir() / "json_schema_decision_v5.json")
 
     with pytest.raises(ParseError):
         parser.parse(
-            '{"action":"REVERSE","confidence":0.9,"reason_code":"X","scene_summary":"x","hazards":[]}'
+            '{"left_zone":"CLEAR","center_zone":"CLEAR","right_zone":"CLEAR","heading_deg":-100,"throttle":0.9,"confidence":0.9}'
         )

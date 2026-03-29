@@ -24,7 +24,7 @@ class StubStopAdapter:
     async def infer(self, request: InferenceRequest) -> InferenceResult:
         _ = request
         return InferenceResult(
-            raw_output='{"action":"STOP","confidence":0.9,"reason_code":"SAFE_TEST","scene_summary":"stop","hazards":[]}',
+            raw_output='{"left_zone":"CLEAR","center_zone":"BLOCKED","right_zone":"CLEAR","heading_deg":0,"throttle":0.0,"confidence":0.9}',
             model_latency_ms=12,
             provider_payload={"provider": "stub-stop"},
         )
@@ -34,7 +34,7 @@ class StubForwardAdapter:
     async def infer(self, request: InferenceRequest) -> InferenceResult:
         _ = request
         return InferenceResult(
-            raw_output='{"action":"FORWARD","confidence":0.92,"reason_code":"PATH_CLEAR","scene_summary":"clear","hazards":[]}',
+            raw_output='{"left_zone":"CLEAR","center_zone":"CLEAR","right_zone":"CLEAR","heading_deg":0,"throttle":0.8,"confidence":0.92}',
             model_latency_ms=15,
             provider_payload={"provider": "stub-forward"},
         )
@@ -63,7 +63,7 @@ def build_test_settings(tmp_path: Path) -> AppSettings:
         ollama_model="llava-test",
         artifacts_dir=tmp_path / "artifacts",
         database_url=f"sqlite:///{tmp_path / 'control_route_test.db'}",
-        prompt_version="v1",
+        prompt_version="v5",
         quality_min_score=0.0,
         quality_min_blur_score=0.0,
     )
@@ -121,18 +121,18 @@ def test_control_frame_accepts_valid_multipart_upload(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["action"] == "STOP"
-    assert payload["reason_code"] == "SAFE_TEST"
+    assert payload["throttle"] == 0.0
+    assert payload["heading_deg"] == 0
 
 
-def test_control_frame_uses_inference_pipeline_for_forward_action(tmp_path: Path) -> None:
+def test_control_frame_uses_inference_pipeline_for_forward(tmp_path: Path) -> None:
     app, _settings = build_test_app(tmp_path=tmp_path, adapter=StubForwardAdapter())
     with TestClient(app) as client:
         response = post_frame(client, make_jpeg_bytes())
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["action"] == "FORWARD"
+    assert payload["throttle"] > 0
     assert payload["left_pwm"] > 0
     assert payload["duration_ms"] > 0
 
@@ -201,7 +201,7 @@ def test_control_frame_returns_early_stop_for_dark_frame(tmp_path: Path) -> None
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["action"] == "STOP"
+    assert payload["throttle"] == 0.0
     assert payload["reason_code"] == "FRAME_TOO_DARK"
 
 

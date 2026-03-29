@@ -7,7 +7,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action
 from simulator.control_client import BackendControlError, ControlFrameRequest
 from simulator.episode import EpisodeConfig, EpisodeStatus, run_episode
 
@@ -16,16 +15,18 @@ def _command(
     *,
     seq: int,
     session_id: UUID,
-    action: Action,
+    heading_deg: int,
+    throttle: float,
     duration_ms: int,
     reason_code: str = "TEST",
 ) -> CommandResponse:
-    pwm = 120 if action is Action.FORWARD else 0
+    pwm = 120 if throttle > 0 else 0
     return CommandResponse(
         trace_id=uuid4(),
         session_id=session_id,
         seq=seq,
-        action=action,
+        heading_deg=heading_deg,
+        throttle=throttle,
         left_pwm=pwm,
         right_pwm=pwm,
         duration_ms=duration_ms,
@@ -39,20 +40,25 @@ def _command(
 
 
 class ScriptedClient:
-    def __init__(self, actions: list[Action], *, duration_ms: int = 250) -> None:
-        self._actions = actions
+    def __init__(self, commands: list[tuple[int, float]], *, duration_ms: int = 250) -> None:
+        """commands: list of (heading_deg, throttle) pairs."""
+        self._commands = commands
         self._duration_ms = duration_ms
         self._idx = 0
 
     def send_frame(self, frame: ControlFrameRequest) -> CommandResponse:
-        action = Action.STOP if self._idx >= len(self._actions) else self._actions[self._idx]
+        if self._idx >= len(self._commands):
+            heading_deg, throttle = 0, 0.0
+        else:
+            heading_deg, throttle = self._commands[self._idx]
         self._idx += 1
         session = frame.session_id or uuid4()
         return _command(
             seq=frame.seq,
             session_id=session,
-            action=action,
-            duration_ms=self._duration_ms if action is not Action.STOP else 0,
+            heading_deg=heading_deg,
+            throttle=throttle,
+            duration_ms=self._duration_ms if throttle > 0 else 0,
         )
 
 
@@ -63,7 +69,7 @@ class ErrorClient:
 
 
 def test_episode_reaches_goal_with_forward_commands(tmp_path: Path) -> None:
-    client = ScriptedClient(actions=[Action.FORWARD] * 20)
+    client = ScriptedClient(commands=[(0, 0.8)] * 20)
     result = run_episode(
         config=EpisodeConfig(
             map_name="straight_corridor",
@@ -106,12 +112,12 @@ def test_episode_uses_stop_fallback_on_backend_error(tmp_path: Path) -> None:
     lines = result.steps_jsonl_path.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 1
     first_record = json.loads(lines[0])
-    assert first_record["action"] == "STOP"
+    assert first_record["throttle"] == 0.0
     assert first_record["reason_code"] == "SIM_BACKEND_ERROR"
 
 
 def test_episode_stops_on_backend_stop(tmp_path: Path) -> None:
-    client = ScriptedClient(actions=[Action.STOP])
+    client = ScriptedClient(commands=[(0, 0.0)])
     result = run_episode(
         config=EpisodeConfig(
             map_name="straight_corridor",
@@ -134,7 +140,7 @@ def test_episode_stops_on_backend_stop(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("max_steps", [1, 3])
 def test_episode_writes_summary_json(tmp_path: Path, max_steps: int) -> None:
-    client = ScriptedClient(actions=[Action.STOP])
+    client = ScriptedClient(commands=[(0, 0.0)])
     result = run_episode(
         config=EpisodeConfig(
             map_name="straight_corridor",

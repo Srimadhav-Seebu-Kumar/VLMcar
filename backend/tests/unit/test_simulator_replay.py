@@ -8,7 +8,6 @@ from uuid import UUID, uuid4
 from PIL import Image
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action
 from simulator.control_client import ControlFrameRequest
 from simulator.replay import ReplayConfig, replay_episode
 
@@ -20,15 +19,16 @@ def _write_jpeg(path: Path, color: tuple[int, int, int]) -> None:
     path.write_bytes(buffer.getvalue())
 
 
-def _command(seq: int, session_id: UUID, action: Action) -> CommandResponse:
+def _command(seq: int, session_id: UUID, heading_deg: int, throttle: float) -> CommandResponse:
     return CommandResponse(
         trace_id=uuid4(),
         session_id=session_id,
         seq=seq,
-        action=action,
-        left_pwm=100 if action is not Action.STOP else 0,
-        right_pwm=100 if action is not Action.STOP else 0,
-        duration_ms=220 if action is not Action.STOP else 0,
+        heading_deg=heading_deg,
+        throttle=throttle,
+        left_pwm=100 if throttle > 0 else 0,
+        right_pwm=100 if throttle > 0 else 0,
+        duration_ms=220 if throttle > 0 else 0,
         confidence=0.9,
         reason_code="REPLAY_TEST",
         message="ok",
@@ -39,15 +39,16 @@ def _command(seq: int, session_id: UUID, action: Action) -> CommandResponse:
 
 
 class ScriptedReplayClient:
-    def __init__(self, actions: list[Action]) -> None:
-        self._actions = actions
+    def __init__(self, commands: list[tuple[int, float]]) -> None:
+        """commands: list of (heading_deg, throttle) pairs."""
+        self._commands = commands
         self._idx = 0
 
     def send_frame(self, frame: ControlFrameRequest) -> CommandResponse:
-        action = self._actions[self._idx]
+        heading_deg, throttle = self._commands[self._idx]
         self._idx += 1
         session = frame.session_id or uuid4()
-        return _command(seq=frame.seq, session_id=session, action=action)
+        return _command(seq=frame.seq, session_id=session, heading_deg=heading_deg, throttle=throttle)
 
 
 def test_replay_matches_actions_and_writes_output(tmp_path: Path) -> None:
@@ -67,7 +68,8 @@ def test_replay_matches_actions_and_writes_output(tmp_path: Path) -> None:
             "frame_width": 32,
             "frame_height": 24,
             "jpeg_quality": 80,
-            "action": "FORWARD",
+            "heading_deg": 0,
+            "throttle": 0.8,
         },
         {
             "seq": 2,
@@ -77,7 +79,8 @@ def test_replay_matches_actions_and_writes_output(tmp_path: Path) -> None:
             "frame_width": 32,
             "frame_height": 24,
             "jpeg_quality": 80,
-            "action": "STOP",
+            "heading_deg": 0,
+            "throttle": 0.0,
         },
     ]
     with steps_path.open("w", encoding="utf-8") as handle:
@@ -93,7 +96,7 @@ def test_replay_matches_actions_and_writes_output(tmp_path: Path) -> None:
             jpeg_quality=80,
             stop_on_backend_stop=True,
         ),
-        control_client=ScriptedReplayClient(actions=[Action.FORWARD, Action.STOP]),
+        control_client=ScriptedReplayClient(commands=[(0, 0.8), (0, 0.0)]),
     )
 
     assert result.total_steps == 2

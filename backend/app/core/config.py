@@ -29,7 +29,7 @@ class AppSettings(BaseSettings):
     ollama_base_url: str = Field(default="http://127.0.0.1:11434", validation_alias="OLLAMA_BASE_URL")
     ollama_model: str = Field(default="llava", validation_alias="OLLAMA_MODEL")
     model_timeout_s: int = Field(default=15, ge=1, le=120, validation_alias="MODEL_TIMEOUT_S")
-    prompt_version: str = Field(default="v1", validation_alias="PROMPT_VERSION")
+    prompt_version: str = Field(default="v5", validation_alias="PROMPT_VERSION")
 
     min_confidence: float = Field(default=0.55, ge=0.0, le=1.0, validation_alias="MIN_CONFIDENCE")
     max_pulse_ms: int = Field(default=400, ge=1, le=2000, validation_alias="MAX_PULSE_MS")

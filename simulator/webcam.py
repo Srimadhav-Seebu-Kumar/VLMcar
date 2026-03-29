@@ -7,7 +7,7 @@ from typing import Any, Protocol, cast
 from uuid import UUID, uuid4
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action, DeviceMode
+from backend.app.schemas.enums import DeviceMode
 from simulator.control_client import BackendControlError, ControlFrameRequest
 from simulator.fallback import build_stop_command
 
@@ -158,12 +158,13 @@ def run_webcam_loop(
             print(command.model_dump_json())
 
             if config.show_preview and cv2_mod is not None:
-                _render_preview(cv2_mod=cv2_mod, frame=frame, command_action=command.action.value)
+                label = f"H={command.heading_deg} T={command.throttle:.1f}"
+                _render_preview(cv2_mod=cv2_mod, frame=frame, label=label)
                 key = cv2_mod.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
 
-            if command.action is Action.STOP and config.stop_on_backend_stop:
+            if command.throttle <= 0.0 and config.stop_on_backend_stop:
                 stopped_by_backend = True
                 break
 
@@ -203,11 +204,11 @@ def _build_default_encoder(cv2_mod: Any) -> FrameEncoder:
     return encode
 
 
-def _render_preview(*, cv2_mod: Any, frame: Any, command_action: str) -> None:
+def _render_preview(*, cv2_mod: Any, frame: Any, label: str) -> None:
     annotated = frame.copy()
     cv2_mod.putText(
         annotated,
-        f"Action: {command_action}",
+        label,
         (10, 30),
         cv2_mod.FONT_HERSHEY_SIMPLEX,
         1.0,

@@ -3,19 +3,19 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action
 from simulator.control_client import ControlFrameRequest
 from simulator.webcam import WebcamConfig, run_webcam_loop
 
 
-def _command(seq: int, session_id: UUID, action: Action) -> CommandResponse:
-    pulse = 220 if action is not Action.STOP else 0
-    pwm = 110 if action is not Action.STOP else 0
+def _command(seq: int, session_id: UUID, heading_deg: int, throttle: float) -> CommandResponse:
+    pwm = 110 if throttle > 0 else 0
+    pulse = 220 if throttle > 0 else 0
     return CommandResponse(
         trace_id=uuid4(),
         session_id=session_id,
         seq=seq,
-        action=action,
+        heading_deg=heading_deg,
+        throttle=throttle,
         left_pwm=pwm,
         right_pwm=pwm,
         duration_ms=pulse,
@@ -51,20 +51,22 @@ class FakeCapture:
 
 
 class ScriptedClient:
-    def __init__(self, actions: list[Action]) -> None:
-        self._actions = actions
+    def __init__(self, commands: list[tuple[int, float]]) -> None:
+        """commands: list of (heading_deg, throttle) pairs."""
+        self._commands = commands
         self._idx = 0
 
     def send_frame(self, frame: ControlFrameRequest) -> CommandResponse:
-        action = self._actions[self._idx]
+        heading_deg, throttle = self._commands[self._idx]
         self._idx += 1
         session = frame.session_id or uuid4()
-        return _command(seq=frame.seq, session_id=session, action=action)
+        return _command(seq=frame.seq, session_id=session, heading_deg=heading_deg, throttle=throttle)
 
 
 def test_webcam_loop_stops_after_backend_stop_command() -> None:
-    capture = FakeCapture(frames=[b"a", b"b", b"c"])
-    client = ScriptedClient(actions=[Action.FORWARD, Action.STOP, Action.FORWARD])
+    # 5 warmup frames + 2 actual frames needed (forward then stop)
+    capture = FakeCapture(frames=[b"w"] * 5 + [b"a", b"b", b"c"])
+    client = ScriptedClient(commands=[(0, 0.8), (0, 0.0), (0, 0.8)])
 
     result = run_webcam_loop(
         config=WebcamConfig(
@@ -88,8 +90,9 @@ def test_webcam_loop_stops_after_backend_stop_command() -> None:
 
 
 def test_webcam_loop_marks_capture_error_when_camera_read_fails() -> None:
-    capture = FakeCapture(frames=[])
-    client = ScriptedClient(actions=[Action.FORWARD])
+    # 5 warmup frames, then no real frames → capture error
+    capture = FakeCapture(frames=[b"w"] * 5)
+    client = ScriptedClient(commands=[(0, 0.8)])
 
     result = run_webcam_loop(
         config=WebcamConfig(

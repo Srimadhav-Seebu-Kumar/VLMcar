@@ -54,9 +54,15 @@
       "type": "number",
       "minimum": 0
     },
-    "last_action": {
-      "type": ["string", "null"],
-      "enum": ["FORWARD", "LEFT", "RIGHT", "STOP", null]
+    "last_heading_deg": {
+      "type": ["integer", "null"],
+      "minimum": -90,
+      "maximum": 90
+    },
+    "last_throttle": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
     },
     "last_error": {
       "type": ["string", "null"],

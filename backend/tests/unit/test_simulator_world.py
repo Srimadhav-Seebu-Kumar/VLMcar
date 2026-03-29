@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from backend.app.schemas.enums import Action
 from simulator.maps import get_builtin_map
 from simulator.world import EgoCameraConfig, GridWorld
 
@@ -20,7 +19,7 @@ def test_world_forward_motion_progresses_vehicle() -> None:
     world = GridWorld(get_builtin_map("straight_corridor"))
     state = world.initial_state()
 
-    next_state = world.apply_command(state, Action.FORWARD, 250)
+    next_state = world.apply_command(state, heading_deg=0, throttle=0.8, duration_ms=250)
 
     assert next_state.x > state.x
     assert next_state.collided is False

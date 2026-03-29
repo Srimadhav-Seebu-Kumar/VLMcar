@@ -8,7 +8,8 @@
     "trace_id",
     "session_id",
     "seq",
-    "action",
+    "heading_deg",
+    "throttle",
     "left_pwm",
     "right_pwm",
     "duration_ms",
@@ -32,9 +33,17 @@
       "type": "integer",
       "minimum": 0
     },
-    "action": {
-      "type": "string",
-      "enum": ["FORWARD", "LEFT", "RIGHT", "STOP"]
+    "heading_deg": {
+      "type": "integer",
+      "minimum": -90,
+      "maximum": 90,
+      "description": "Steering angle: -90 full left, 0 straight, +90 full right"
+    },
+    "throttle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Speed: 0.0 stop, 1.0 full speed"
     },
     "left_pwm": {
       "type": "integer",

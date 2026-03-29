@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
-from backend.app.schemas.enums import Action
 from backend.app.services.inference.parser import ParsedDecision
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class SafetyOutcome:
     """Safety override output for downstream policy shaping."""
 
-    action: Action
+    heading_deg: int
+    throttle: float
     reason_code: str
     message: str
     safe_to_execute: bool
@@ -25,7 +28,8 @@ def apply_safety_overrides(
 
     if estop_active:
         return SafetyOutcome(
-            action=Action.STOP,
+            heading_deg=0,
+            throttle=0.0,
             reason_code="ESTOP_ACTIVE",
             message="emergency stop mode is active",
             safe_to_execute=False,
@@ -33,23 +37,36 @@ def apply_safety_overrides(
 
     if decision.confidence < min_confidence:
         return SafetyOutcome(
-            action=Action.STOP,
+            heading_deg=0,
+            throttle=0.0,
             reason_code="LOW_CONFIDENCE",
             message="model confidence below threshold",
             safe_to_execute=False,
         )
 
-    if decision.action is Action.STOP:
+    if decision.throttle <= 0.0:
+        logger.info(
+            "safety_throttle_zero_stop",
+            extra={
+                "heading_deg": decision.heading_deg,
+                "throttle": decision.throttle,
+                "confidence": decision.confidence,
+                "reason_code": decision.reason_code,
+                "raw_json_keys": list(decision.raw_json.keys()),
+            },
+        )
         return SafetyOutcome(
-            action=Action.STOP,
+            heading_deg=0,
+            throttle=0.0,
             reason_code=decision.reason_code,
-            message=decision.scene_summary or "model chose STOP",
+            message=decision.scene_summary or "model chose stop",
             safe_to_execute=True,
         )
 
     return SafetyOutcome(
-        action=decision.action,
+        heading_deg=decision.heading_deg,
+        throttle=decision.throttle,
         reason_code=decision.reason_code,
-        message=decision.scene_summary or decision.action.value,
+        message=decision.scene_summary or f"heading={decision.heading_deg} throttle={decision.throttle}",
         safe_to_execute=True,
     )

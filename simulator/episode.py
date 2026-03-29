@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 from PIL import Image
 
 from backend.app.schemas.command import CommandResponse
-from backend.app.schemas.enums import Action, DeviceMode
+from backend.app.schemas.enums import DeviceMode
 from simulator.control_client import BackendControlError, ControlFrameRequest
 from simulator.fallback import build_stop_command
 from simulator.maps import get_builtin_map
@@ -72,6 +72,11 @@ class EpisodeResult:
             "steps_jsonl_path": str(self.steps_jsonl_path),
             "summary_json_path": str(self.summary_json_path),
         }
+
+
+def _is_stopped(command: CommandResponse) -> bool:
+    """Check if a command is a stop (throttle=0)."""
+    return command.throttle <= 0.0
 
 
 def run_episode(
@@ -137,7 +142,9 @@ def run_episode(
                 )
 
             state_before = state
-            state = world.apply_command(state, command.action, command.duration_ms)
+            state = world.apply_command(
+                state, command.heading_deg, command.throttle, command.duration_ms
+            )
             reached_goal = world.is_goal_reached(state)
             collided = state.collided
 
@@ -173,7 +180,7 @@ def run_episode(
             if reached_goal:
                 status = EpisodeStatus.GOAL_REACHED
                 break
-            if command.action is Action.STOP and config.stop_on_backend_stop:
+            if _is_stopped(command) and config.stop_on_backend_stop:
                 status = EpisodeStatus.BACKEND_STOP
                 break
 
@@ -227,7 +234,8 @@ def _build_step_record(
         "state_after": state_after.as_dict(),
         "trace_id": str(command.trace_id),
         "session_id": str(command.session_id),
-        "action": command.action.value,
+        "heading_deg": command.heading_deg,
+        "throttle": command.throttle,
         "left_pwm": command.left_pwm,
         "right_pwm": command.right_pwm,
         "duration_ms": command.duration_ms,

@@ -8,15 +8,16 @@ import pytest
 from simulator.control_client import BackendControlClient, BackendControlError, ControlFrameRequest
 
 
-def _valid_command_payload(action: str = "STOP") -> dict[str, object]:
+def _valid_command_payload(heading_deg: int = 0, throttle: float = 0.0) -> dict[str, object]:
     return {
         "trace_id": str(uuid4()),
         "session_id": str(uuid4()),
         "seq": 1,
-        "action": action,
-        "left_pwm": 0,
-        "right_pwm": 0,
-        "duration_ms": 0,
+        "heading_deg": heading_deg,
+        "throttle": throttle,
+        "left_pwm": 120 if throttle > 0 else 0,
+        "right_pwm": 120 if throttle > 0 else 0,
+        "duration_ms": 220 if throttle > 0 else 0,
         "confidence": 1.0,
         "reason_code": "TEST",
         "message": "ok",
@@ -31,7 +32,7 @@ def test_control_client_sends_frame_and_parses_command() -> None:
         assert request.method == "POST"
         assert request.url.path == "/api/v1/control/frame"
         assert request.headers["content-type"].startswith("multipart/form-data")
-        return httpx.Response(status_code=200, json=_valid_command_payload(action="FORWARD"))
+        return httpx.Response(status_code=200, json=_valid_command_payload(heading_deg=0, throttle=0.8))
 
     transport = httpx.MockTransport(handler)
     with httpx.Client(transport=transport) as http_client:
@@ -51,7 +52,8 @@ def test_control_client_sends_frame_and_parses_command() -> None:
             )
         )
 
-    assert command.action.value == "FORWARD"
+    assert command.heading_deg == 0
+    assert command.throttle == 0.8
     assert command.seq == 1
 
 

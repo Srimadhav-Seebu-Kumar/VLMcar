@@ -60,6 +60,22 @@ def create_app(settings: AppSettings | None = None) -> FastAPI:
     # Strip JSON Schema meta-fields that Ollama doesn't use for constrained generation
     ollama_schema = {k: v for k, v in output_schema.items() if not k.startswith("$")}
 
+    # Warn if schema lacks continuous control fields expected by the parser
+    schema_properties = output_schema.get("properties", {})
+    if "heading_deg" not in schema_properties or "throttle" not in schema_properties:
+        logger.warning(
+            "schema_version_mismatch",
+            extra={
+                "prompt_version": version,
+                "schema_path": str(active_schema_path),
+                "has_heading_deg": "heading_deg" in schema_properties,
+                "has_throttle": "throttle" in schema_properties,
+                "note": "Schema lacks heading_deg/throttle. "
+                        "Parser will attempt v4 action conversion. "
+                        "Consider switching PROMPT_VERSION to v5.",
+            },
+        )
+
     app.state.estop_active = False
     app.state.inference_adapter = OllamaNativeAdapter(
         base_url=app_settings.ollama_base_url,
