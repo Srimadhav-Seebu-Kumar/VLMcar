@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from backend.app.services.inference.parser import ParsedDecision
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -42,6 +45,16 @@ def apply_safety_overrides(
         )
 
     if decision.throttle <= 0.0:
+        logger.info(
+            "safety_throttle_zero_stop",
+            extra={
+                "heading_deg": decision.heading_deg,
+                "throttle": decision.throttle,
+                "confidence": decision.confidence,
+                "reason_code": decision.reason_code,
+                "raw_json_keys": list(decision.raw_json.keys()),
+            },
+        )
         return SafetyOutcome(
             heading_deg=0,
             throttle=0.0,

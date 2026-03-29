@@ -27,7 +27,15 @@
       "Bash(python -m simulator.cli webcam --max-frames 20 --timeout-s 130)",
       "Bash(taskkill //PID 24212 //F)",
       "Bash(python -m simulator.cli webcam --max-frames 15 --timeout-s 130)",
-      "Bash(taskkill //PID 14560 //F)"
+      "Bash(taskkill //PID 14560 //F)",
+      "Bash(find /c/Users/seyan/Documents/Projcts/VLMcar -type f \\\\\\(-name *.yaml -o -name *.yml -o -name *.json -o -name *.toml -o -name *.env* -o -name config.py -o -name settings.py -o -name *.conf \\\\\\))",
+      "Bash(find /c/Users/seyan/Documents/Projcts/VLMcar/data -name *.jsonl -o -name *.json -type f)",
+      "Bash(grep -r safe_to_execute /c/Users/seyan/Documents/Projcts/VLMcar/backend/app --include=*.py)",
+      "Bash(git -C \"c:/Users/seyan/Documents/Projcts/VLMcar\" log --oneline -20)",
+      "Bash(git -C \"c:/Users/seyan/Documents/Projcts/VLMcar\" log --oneline --all)",
+      "Bash(git -C \"c:/Users/seyan/Documents/Projcts/VLMcar\" diff acc5ea7..1fed1c9 --stat)",
+      "Bash(python -m pytest backend/tests/unit/test_parser_v4_fallback.py -v)",
+      "Bash(python -m pytest backend/tests/ -v)"
     ]
   }
 }
