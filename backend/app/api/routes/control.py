@@ -31,6 +31,7 @@ from backend.app.services.inference import (
     PromptManager,
     StructuredOutputParser,
 )
+from backend.app.services.cv_obstacle_detector import detect_obstacle_zones
 from backend.app.services.preprocess import preprocess_frame
 from backend.app.services.quality_gate import evaluate_quality
 from backend.app.services.storage import (
@@ -276,6 +277,7 @@ async def ingest_frame(
     estop_active: bool = getattr(request.app.state, "estop_active", False)
 
     model_latency_ms = 0
+    cv_data = None
     if estop_active:
         command = build_stop_command(
             trace_id=trace_id,
@@ -299,9 +301,17 @@ async def ingest_frame(
             safe_to_execute=True,
         )
     else:
+        # Run CV obstacle detector for spatial reasoning
+        try:
+            cv_data = detect_obstacle_zones(preprocess_result.normalized_jpeg)
+        except Exception:
+            logger.warning("cv_detector_failed", extra={"trace_id": str(trace_id)})
+            cv_data = None
+
         prompt_bundle = prompt_manager.build_prompt(
             frame=metadata_with_session,
             prompt_version=settings.prompt_version,
+            cv_data=cv_data,
         )
         try:
             inference_result = await inference_adapter.infer(
@@ -322,6 +332,7 @@ async def ingest_frame(
                 backend_latency_ms=0,
                 model_latency_ms=model_latency_ms,
                 estop_active=estop_active,
+                cv_data=cv_data,
             )
         except InferenceError as exc:
             command = build_stop_command(
@@ -402,6 +413,8 @@ async def ingest_frame(
             "throttle": command.throttle,
             "model_latency_ms": command.model_latency_ms,
             "prompt_version": settings.prompt_version,
+            "cv_clear_path": cv_data.get("clear_path") if cv_data else None,
+            "cv_center_blocked": cv_data.get("center_blocked") if cv_data else None,
         },
     )
 

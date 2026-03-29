@@ -35,7 +35,12 @@ class PromptManager:
             self._decision_prompts[version] = self._read_file(f"decision_prompt_{version}.txt")
         return self._decision_prompts[version]
 
-    def build_prompt(self, frame: FrameRequest, prompt_version: str = "v1") -> PromptBundle:
+    def build_prompt(
+        self,
+        frame: FrameRequest,
+        prompt_version: str = "v1",
+        cv_data: dict | None = None,
+    ) -> PromptBundle:
         """Combine system and decision prompts with compact frame metadata context."""
 
         system_prompt = self.load_system_prompt(version=prompt_version)
@@ -48,14 +53,16 @@ class PromptManager:
             "frame_height": frame.frame_height,
             "timestamp_ms": frame.timestamp_ms,
         }
-        text = "\n\n".join(
-            [
-                system_prompt,
-                decision_prompt,
-                "Frame metadata:",
-                json.dumps(metadata, separators=(",", ":")),
-            ]
-        )
+        parts = [
+            system_prompt,
+            decision_prompt,
+            "Frame metadata:",
+            json.dumps(metadata, separators=(",", ":")),
+        ]
+        if cv_data is not None:
+            parts.append("OBSTACLE SENSOR DATA:")
+            parts.append(json.dumps(cv_data, separators=(",", ":")))
+        text = "\n\n".join(parts)
         return PromptBundle(version=prompt_version, text=text)
 
     def _read_file(self, filename: str) -> str:

@@ -23,6 +23,10 @@ class CaptureDevice(Protocol):
 
     def read(self) -> tuple[bool, Any]: ...
 
+    def grab(self) -> bool: ...
+
+    def retrieve(self) -> tuple[bool, Any]: ...
+
     def set(self, prop_id: int, value: float) -> bool: ...
 
     def release(self) -> None: ...
@@ -105,6 +109,8 @@ def run_webcam_loop(
     if cv2_mod is not None:
         capture.set(cv2_mod.CAP_PROP_FRAME_WIDTH, float(config.frame_width))
         capture.set(cv2_mod.CAP_PROP_FRAME_HEIGHT, float(config.frame_height))
+        # Minimize internal buffer so reads return the latest frame
+        capture.set(cv2_mod.CAP_PROP_BUFFERSIZE, 1.0)
 
     # Warmup: discard initial frames while camera auto-exposure settles
     time.sleep(1)
@@ -119,7 +125,8 @@ def run_webcam_loop(
 
     try:
         for seq in range(1, config.max_frames + 1):
-            ok, frame = capture.read()
+            # Drain buffered frames so we get the latest camera view
+            ok, frame = _read_latest_frame(capture)
             if not ok:
                 stopped_by_capture_error = True
                 break
@@ -182,6 +189,18 @@ def run_webcam_loop(
         stopped_by_backend=stopped_by_backend,
         stopped_by_capture_error=stopped_by_capture_error,
     )
+
+
+def _read_latest_frame(capture: CaptureDevice) -> tuple[bool, Any]:
+    """Drain buffered frames and return only the most recent one.
+
+    After a slow backend call (~2s), the camera buffer holds stale frames.
+    Discard up to 4 stale frames (typical OpenCV buffer size) so the final
+    read() returns the current camera view.
+    """
+    for _ in range(4):
+        capture.grab()
+    return capture.read()
 
 
 def _import_cv2() -> Any:

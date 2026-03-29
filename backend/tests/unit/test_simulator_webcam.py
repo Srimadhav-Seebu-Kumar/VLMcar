@@ -42,6 +42,13 @@ class FakeCapture:
         value = self._frames.pop(0)
         return (True, value)
 
+    def grab(self) -> bool:
+        # No buffered frames in tests — always return False
+        return False
+
+    def retrieve(self) -> tuple[bool, bytes]:
+        return (False, b"")
+
     def set(self, prop_id: int, value: float) -> bool:
         _ = (prop_id, value)
         return True

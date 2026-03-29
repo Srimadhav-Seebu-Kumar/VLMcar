@@ -35,7 +35,17 @@
       "Bash(git -C \"c:/Users/seyan/Documents/Projcts/VLMcar\" log --oneline --all)",
       "Bash(git -C \"c:/Users/seyan/Documents/Projcts/VLMcar\" diff acc5ea7..1fed1c9 --stat)",
       "Bash(python -m pytest backend/tests/unit/test_parser_v4_fallback.py -v)",
-      "Bash(python -m pytest backend/tests/ -v)"
+      "Bash(python -m pytest backend/tests/ -v)",
+      "Bash(find /c/Users/seyan/Documents/Projcts/VLMcar -type f -name *.jsonl -o -name *.json -o -name *.log)",
+      "Bash(python3:*)",
+      "Bash(find /c/Users/seyan/Documents/Projcts/VLMcar -type f \\\\\\(-name *.log -o -name *debug* \\\\\\))",
+      "Bash(sqlite3 /c/Users/seyan/Documents/Projcts/VLMcar/data/rc_car.db .schema)",
+      "Bash(sqlite3 /c/Users/seyan/Documents/Projcts/VLMcar/data/rc_car.db \".tables\")",
+      "Bash(find /c/Users/seyan/Documents/Projcts/VLMcar/docs -type f -name *.json -o -name *.md)",
+      "Bash(python -m pytest backend/tests/unit/test_cv_override.py -v)",
+      "Bash(python -m pytest backend/tests/unit/test_simulator_webcam.py -v)",
+      "Bash(python -m pytest backend/tests/unit/test_cv_override.py backend/tests/unit/test_decision_policy.py backend/tests/unit/test_parser_v4_fallback.py -v)",
+      "Bash(python -m pytest backend/tests/ -v --tb=short)"
     ]
   }
 }

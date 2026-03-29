@@ -146,9 +146,17 @@ def test_v4_forward_through_full_pipeline_produces_nonzero_pwm() -> None:
 
 
 def test_v4_left_through_full_pipeline_produces_differential_pwm() -> None:
-    """LEFT action should produce higher right_pwm than left_pwm (turn left)."""
+    """LEFT action with center blocked should produce turn-left PWM."""
     parser = StructuredOutputParser(schema_path=v4_schema_path())
-    parsed = parser.parse(_v4_json("LEFT", confidence=0.8))
+    # Zones consistent with LEFT action: center blocked, left clear
+    raw = json.dumps({
+        "left_zone": "CLEAR",
+        "center_zone": "BLOCKED",
+        "right_zone": "BLOCKED",
+        "action": "LEFT",
+        "confidence": 0.8,
+    })
+    parsed = parser.parse(raw)
 
     policy = DecisionPolicy(
         min_confidence=0.3,

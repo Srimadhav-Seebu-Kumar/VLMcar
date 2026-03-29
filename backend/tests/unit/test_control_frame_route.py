@@ -24,7 +24,7 @@ class StubStopAdapter:
     async def infer(self, request: InferenceRequest) -> InferenceResult:
         _ = request
         return InferenceResult(
-            raw_output='{"left_zone":"CLEAR","center_zone":"BLOCKED","right_zone":"CLEAR","heading_deg":0,"throttle":0.0,"confidence":0.9}',
+            raw_output='{"left_zone":"BLOCKED","center_zone":"BLOCKED","right_zone":"BLOCKED","heading_deg":0,"throttle":0.0,"confidence":0.9}',
             model_latency_ms=12,
             provider_payload={"provider": "stub-stop"},
         )
